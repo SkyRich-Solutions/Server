@@ -6,7 +6,7 @@ import multer from 'multer';
 import Papa from 'papaparse';
 import fs from 'fs';
 import corsMiddleware from './Config/cors.js';
-import testRoute from './Routes/testRoute.js';
+import routes from './Routes/routes.js';
 
 dotenv.config();
 
@@ -33,7 +33,24 @@ const extractDataFromFile = (filePath) => {
             Papa.parse(data, {
                 header: true,
                 skipEmptyLines: true,
-                complete: (result) => resolve(result.data),
+                complete: (result) => {
+                    const normalizedData = result.data.map((row) => {
+                        const normalizedRow = {};
+                        Object.keys(row).forEach((key) => {
+                            const normalizedKey = key
+                                .trim()
+                                .replace(/\s+/g, '_') // Replace spaces with underscores
+                                .replace(/\-/g, '_') // Replace hyphens with underscores
+                                .replace(/\._/g, '_') // Replace ._ with _
+                                .replace(/\(.*\)/, ''); // Remove text in parentheses
+
+                            normalizedRow[normalizedKey] = row[key] || ''; // Ensure empty values are set as empty strings
+                        });
+                        return normalizedRow;
+                    });
+
+                    resolve(normalizedData);
+                },
                 error: (error) => reject(error)
             });
         });
@@ -59,39 +76,6 @@ const generateSchemaAndInsertData = async (collectionName, data) => {
     );
 };
 
-app.post('/upload', upload.single('file'), async (req, res) => {
-    try {
-        const file = req.file;
-
-        if (!file) {
-            return res.status(400).json({ message: 'No file uploaded' });
-        }
-
-        const collectionName = `DynamicTable_${Date.now()}`;
-        const data = await extractDataFromFile(file.path);
-
-        if (data.length === 0) {
-            return res
-                .status(400)
-                .json({ message: 'CSV file is empty or invalid.' });
-        }
-
-        await generateSchemaAndInsertData(collectionName, data);
-
-        fs.unlinkSync(file.path); // Delete the file after processing
-        res.status(200).json({
-            message: 'File processed and data stored successfully',
-            collectionName
-        });
-    } catch (err) {
-        console.error('Error:', err);
-        res.status(500).json({
-            message: 'An error occurred',
-            error: err.message
-        });
-    }
-});
-
 // Use CORS Middleware
 app.use(corsMiddleware);
 
@@ -115,7 +99,7 @@ app.get('/', (req, res) => {
     });
 });
 
-app.use('/test', testRoute);
+app.use('', routes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
@@ -126,6 +110,42 @@ app.use((err, req, res, next) => {
         statusCode,
         message
     });
+});
+
+app.post('/upload', upload.single('file'), async (req, res) => {
+    try {
+        const file = req.file;
+
+        if (!file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        // Extract filename without extension
+        let collectionName = file.originalname.replace(/\.[^/.]+$/, ''); // Remove file extension
+        collectionName = collectionName.replace(/[^a-zA-Z0-9_]/g, '_'); // Ensure MongoDB-safe name
+
+        const data = await extractDataFromFile(file.path);
+
+        if (data.length === 0) {
+            return res
+                .status(400)
+                .json({ message: 'CSV file is empty or invalid.' });
+        }
+
+        await generateSchemaAndInsertData(collectionName, data);
+
+        fs.unlinkSync(file.path); // Delete the file after processing
+        res.status(200).json({
+            message: 'File processed and data stored successfully',
+            collectionName
+        });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({
+            message: 'An error occurred',
+            error: err.message
+        });
+    }
 });
 
 export default app; // Export the app
