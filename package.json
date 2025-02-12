@@ -5,25 +5,19 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "dev": "nodemon index.js",
-        "start": "node index.js",
+        "dev": "nodemon StartServer.js",
+        "start": "node StartServer.js",
         "build": "npm install && npm install --prefix client && npm run build --prefix client"
     },
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "bcryptjs": "^2.4.3",
-        "cookie-parser": "^1.4.6",
         "dotenv": "^16.4.1",
         "express": "^4.18.2",
-        "fs": "^0.0.1-security",
         "http": "^0.0.1-security",
-        "jsonwebtoken": "^9.0.2",
-        "mongoose": "^8.1.1",
-        "multer": "^1.4.5-lts.1",
         "nodemon": "^3.0.3",
-        "papaparse": "^5.5.1",
-        "socket-io": "^1.0.0",
-        "socket.io": "^4.8.1"
+        "socket.io": "^4.8.1",
+        "sqlite": "^5.1.1",
+        "sqlite3": "^5.1.7"
     }
 }

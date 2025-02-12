@@ -1,7 +1,7 @@
 import { Server } from 'socket.io';
 
 export const InitializeSocket = (server) => {
-    console.log('Initializing WebSocket ...');
+    console.log('🔌 Initializing WebSocket ...');
     const io = new Server(server, {
         cors: {
             origin: '*', // Allow all origins, adjust as needed
