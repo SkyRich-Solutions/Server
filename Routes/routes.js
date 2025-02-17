@@ -1,5 +1,5 @@
 import express from "express";
-import { getJson, upload, uploadCSV } from "../Controller/UploadController.js";
+import { upload, uploadCSV } from "../Controller/UploadController.js";
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ router.get("/", (req, res) => {
     res.send("🚀 API Running!");
 });
 
-router.get("/upload", getJson)
+// router.get("/upload", getJson)
 router.post("/uploadFile", upload.single('file'), uploadCSV);
 
 
