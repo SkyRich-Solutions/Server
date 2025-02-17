@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import corsMiddleware from './cors.js';
-import Database from '../Database/Database.js';
+import routes from '../Routes/routes.js';
 
 dotenv.config();
 
@@ -14,15 +14,11 @@ app.use(corsMiddleware);
 // JSON Parsing Middleware
 app.use(express.json());
 
-// Routes
 app.get('/', (req, res) => {
-    res.json({ message: 'Server is Running ...' });
+    res.send('🚀 Express Server Running!');
 });
 
-app.get('/users', async (req, res) => {
-    const users = await Database.all('SELECT * FROM users');
-    res.json(users);
-});
+app.use('/api', routes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
