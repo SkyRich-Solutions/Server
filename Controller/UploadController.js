@@ -1,4 +1,4 @@
-import { dbInstance, InitializeDatabase } from '../Database/Database.js';
+import { unprocessedDbInstance, InitializeDatabases } from '../Database/Database.js';
 import multer from 'multer';
 import fs from 'fs';
 import Papa from 'papaparse';
@@ -61,7 +61,7 @@ const tableSchemaMapping = {
     }
 };
 
-// Upload CSV File API with strict 100% header matching
+// Upload CSV File API
 export const uploadCSV = async (req, res) => {
     try {
         if (!req.file) {
@@ -73,7 +73,7 @@ export const uploadCSV = async (req, res) => {
         // Read and parse CSV file
         const data = await readCSVFile(filePath);
 
-        // Determine the exact match table based on CSV headers
+        // Determine the target table
         const tableSelection = determineTargetTable(data);
         if (!tableSelection.table) {
             fs.unlinkSync(filePath);
@@ -89,10 +89,10 @@ export const uploadCSV = async (req, res) => {
 
         const { table, columnMapping } = tableSelection;
 
-        // Insert data into the determined table
-        await insertDataIntoDB(data, table, columnMapping);
+        // Insert data into the unprocessed database
+        await insertDataIntoUnprocessedDB(data, table, columnMapping);
 
-        // Remove the temporary file
+        // Remove temporary file
         fs.unlinkSync(filePath);
 
         res.status(200).json({ success: true, message: `File uploaded and data inserted into ${table} successfully!` });
@@ -110,7 +110,7 @@ const readCSVFile = (filePath) => {
             if (err) return reject(err);
 
             Papa.parse(data, {
-                header: true, // First row contains column names
+                header: true,
                 skipEmptyLines: true,
                 complete: (result) => resolve(result.data),
                 error: (error) => reject(error),
@@ -128,8 +128,8 @@ const determineTargetTable = (data) => {
     for (const [tableName, schema] of Object.entries(tableSchemaMapping)) {
         const expectedHeaders = schema.headers;
 
-        // Check for exact match (order does not matter, but all headers must match)
-        const isExactMatch = 
+        // Check for exact match
+        const isExactMatch =
             csvHeaders.length === expectedHeaders.length &&
             csvHeaders.every(header => expectedHeaders.includes(header));
 
@@ -138,13 +138,16 @@ const determineTargetTable = (data) => {
         }
     }
 
-    return { table: null, columnMapping: null }; // No exact match found
+    return { table: null, columnMapping: null };
 };
 
-// Function to insert extracted data into the selected table
-const insertDataIntoDB = async (data, table, columnMapping) => {
-    const db = await InitializeDatabase();
+// Function to insert extracted data into the unprocessed database
+const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
     try {
+        if (!unprocessedDbInstance) {
+            throw new Error('Unprocessed database connection is not established');
+        }
+
         // Generate query dynamically
         const dbColumns = Object.values(columnMapping);
         const placeholders = dbColumns.map(() => '?').join(', ');
@@ -153,7 +156,7 @@ const insertDataIntoDB = async (data, table, columnMapping) => {
         // Insert each row dynamically
         for (const row of data) {
             const values = Object.keys(columnMapping).map(csvHeader => row[csvHeader] || null);
-            await db.run(query, values);
+            await unprocessedDbInstance.run(query, values);
         }
 
         console.log(`✅ Data inserted into ${table} successfully!`);
@@ -164,28 +167,3 @@ const insertDataIntoDB = async (data, table, columnMapping) => {
 
 // Export Multer upload middleware
 export { upload };
-
-// API to fetch data from the database
-export const getJson = async (req, res) => {
-    try {
-        if (!dbInstance) {
-            throw new Error('Database connection is not established');
-        }
-
-        const query = `SELECT * FROM TurbineData;`;
-        const rows = await dbInstance.all(query);
-
-        res.status(200).json({
-            success: true,
-            message: 'Data retrieved successfully',
-            data: rows
-        });
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to retrieve data',
-            error: error.message
-        });
-    }
-};
