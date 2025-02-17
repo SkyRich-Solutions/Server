@@ -1,4 +1,4 @@
-import { dbInstance, InitializeDatabase } from '../Database/Database.js';
+import {unprocessedDbInstance, InitializeDatabases } from '../Database/Database.js';
 import multer from 'multer';
 import fs from 'fs';
 import Papa from 'papaparse';
@@ -143,7 +143,7 @@ const determineTargetTable = (data) => {
 
 // Function to insert extracted data into the selected table
 const insertDataIntoDB = async (data, table, columnMapping) => {
-    const db = await InitializeDatabase();
+    const db = await InitializeDatabases();
     try {
         // Generate query dynamically
         const dbColumns = Object.values(columnMapping);
@@ -168,12 +168,12 @@ export { upload };
 // API to fetch data from the database
 export const getJson = async (req, res) => {
     try {
-        if (!dbInstance) {
+        if (!unprocessedDbInstance) {
             throw new Error('Database connection is not established');
         }
 
         const query = `SELECT * FROM TurbineData;`;
-        const rows = await dbInstance.all(query);
+        const rows = await unprocessedDbInstance.all(query);
 
         res.status(200).json({
             success: true,
