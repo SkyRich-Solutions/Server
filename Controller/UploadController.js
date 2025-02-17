@@ -1,4 +1,4 @@
-import { dbInstance , InitializeDatabase } from '../Database/Database.js';
+import { dbInstance, InitializeDatabase } from '../Database/Database.js';
 import multer from 'multer';
 import fs from 'fs';
 import Papa from 'papaparse';
@@ -6,7 +6,19 @@ import Papa from 'papaparse';
 // Multer storage setup (temporary folder for uploads)
 const upload = multer({ dest: 'uploads/' });
 
-// Upload CSV File API
+// Mapping CSV headers to database column names
+const csvToDbColumnMapping = {
+    "Material": "Material",
+    "Description": "Description",
+    "Plant": "Plant",
+    "Plant-Specific Material Status": "PlantSpecificMaterialStatus",
+    "Batch Management(Plant)": "BatchManagementPlant",
+    "Serial No. Profile": "SerialNoProfile",
+    "Replacement Part": "ReplacementPart",
+    "Used in a S-bom": "UsedInSBom"
+};
+
+// Upload CSV File API with header validation
 export const uploadCSV = async (req, res) => {
     try {
         if (!req.file) {
@@ -17,7 +29,20 @@ export const uploadCSV = async (req, res) => {
 
         // Read and parse CSV file
         const data = await readCSVFile(filePath);
-        
+
+        // Validate headers before proceeding
+        const headerValidationResult = validateHeaders(data);
+        if (!headerValidationResult.valid) {
+            fs.unlinkSync(filePath);
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid CSV headers',
+                missingHeaders: headerValidationResult.missingHeaders,
+                unexpectedHeaders: headerValidationResult.unexpectedHeaders,
+                suggestion: 'Please ensure your CSV file follows the correct format and contains the required columns.'
+            });
+        }
+
         // Insert extracted data into SQLite
         await insertDataIntoDB(data);
 
@@ -48,21 +73,44 @@ const readCSVFile = (filePath) => {
     });
 };
 
+// Function to validate CSV headers and return missing/unexpected headers
+const validateHeaders = (data) => {
+    if (!data || data.length === 0) {
+        return { valid: false, missingHeaders: [], unexpectedHeaders: [] };
+    }
+
+    const csvHeaders = Object.keys(data[0]);
+    const expectedHeaders = Object.keys(csvToDbColumnMapping);
+
+    // Find missing headers
+    const missingHeaders = expectedHeaders.filter(header => !csvHeaders.includes(header));
+
+    // Find unexpected headers
+    const unexpectedHeaders = csvHeaders.filter(header => !expectedHeaders.includes(header));
+
+    return {
+        valid: missingHeaders.length === 0 && unexpectedHeaders.length === 0,
+        missingHeaders,
+        unexpectedHeaders
+    };
+};
+
 // Function to insert extracted data into SQLite
 const insertDataIntoDB = async (data) => {
     const db = await InitializeDatabase();
     try {
         // Prepare the insert query
         const query = `
-            INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, SerialNoProfile, ReplacementPart, UsedInSBom) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, SerialNoProfile, ReplacementPart, UsedInSBom) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         // Iterate over the data and insert each row
         for (const row of data) {
             await db.run(query, [
-                row.Material, 
-                row.Description, 
-                row.Plant, 
+                row["Material"], 
+                row["Description"], 
+                row["Plant"], 
                 row["Plant-Specific Material Status"],
                 row["Batch Management(Plant)"], 
                 row["Serial No. Profile"], 
@@ -77,23 +125,19 @@ const insertDataIntoDB = async (data) => {
     }
 };
 
-
 // Export Multer upload middleware
 export { upload };
+
+// API to fetch data from the database
 export const getJson = async (req, res) => {
     try {
-        // Ensure that the database instance is initialized
         if (!dbInstance) {
             throw new Error('Database connection is not established');
         }
 
-        // Query to fetch all data from the MaterialData table
         const query = `SELECT * FROM MaterialData;`;
-
-        // Execute the query using dbInstance.all() (not .query())
         const rows = await dbInstance.all(query);
 
-        // Send the data as a JSON response
         res.status(200).json({
             success: true,
             message: 'Data retrieved successfully',
