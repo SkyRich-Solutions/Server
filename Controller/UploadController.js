@@ -167,3 +167,18 @@ const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
 
 // Export Multer upload middleware
 export { upload };
+
+export const getUnprocessedData = async (req, res) => {
+    try {
+        const unprocessedData = await unprocessedDbInstance.all(`SELECT * FROM TurbineData`);
+
+        if (!unprocessedData || unprocessedData.length === 0) {
+            return res.status(404).json({ success: false, message: 'No unprocessed data found' });
+        }
+
+        res.status(200).json({ success: true, data: unprocessedData });
+    } catch (error) {
+        console.error('Error fetching unprocessed data:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed data', error: error.message });
+    }
+};
