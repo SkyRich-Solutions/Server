@@ -49,6 +49,7 @@ dotenv.config();
 
 let unprocessedDbInstance = null;
 let processedDbInstance = null;
+let Predictions_DataDbInstance = null;
 
 // Initialize SQLite connections
 const InitializeDatabases = async () => {
@@ -68,6 +69,14 @@ const InitializeDatabases = async () => {
             });
             console.log('✅ Processed Database Connected!');
         }
+
+        if (!Predictions_DataDbInstance) {
+            Predictions_DataDbInstance = await open({
+                filename: process.env.Predictions_DATABASE_PATH, // Path to Processed Data.db
+                driver: sqlite3.Database,
+            });
+            console.log('✅ Predictions Database Connected!');
+        }
     } catch (error) {
         console.error('Error initializing databases:', error.message);
     }
@@ -86,5 +95,6 @@ export {
     InitializeDatabases,
     startDatabases,
     unprocessedDbInstance,
-    processedDbInstance
+    processedDbInstance, 
+    Predictions_DataDbInstance
 };
