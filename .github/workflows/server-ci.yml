@@ -1,0 +1,93 @@
+name: Server CI Pipeline
+
+on:
+  push:
+    branches:
+      - Development
+      - Feature
+      - server-ci-pipeline
+
+jobs:
+  server-build:
+    name: Install Dependencies and Run Server Checks
+    runs-on: ubuntu-latest
+
+    env:
+      PORT: ${{ secrets.PORT }}
+      UNPROCESSED_DATABASE_PATH: ${{ secrets.UNPROCESSED_DATABASE_PATH }}
+      PROCESSED_DATABASE_PATH: ${{ secrets.PROCESSED_DATABASE_PATH }}
+
+    steps:
+      - name: Checkout Server Code
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Server Dependencies
+        run: npm install
+
+      - name: Debug Current Working Directory
+        run: pwd
+
+      - name: Show Directory Tree
+        run: ls -R
+
+      - name: Check UnProcessed Database Connection
+        run: |
+          echo "Testing UnProcessed Database connection..."
+          node -e "
+            const sqlite = require('sqlite');
+            const sqlite3 = require('sqlite3');
+
+            sqlite.open({
+              filename: process.env.UNPROCESSED_DATABASE_PATH,
+              driver: sqlite3.Database,
+            }).then(db => {
+              console.log('✅ UnProcessed Database Connected!');
+              db.close();
+            }).catch(err => {
+              console.error('Error connecting to UnProcessed Database:', err);
+            });
+          "
+
+      - name: Check Processed Database Connection
+        run: |
+          echo "Testing Processed Database connection..."
+          node -e "
+            const sqlite = require('sqlite');
+            const sqlite3 = require('sqlite3');
+
+            sqlite.open({
+              filename: process.env.PROCESSED_DATABASE_PATH,
+              driver: sqlite3.Database,
+            }).then(db => {
+              console.log('✅ Processed Database Connected!');
+              db.close();
+            }).catch(err => {
+              console.error('Error connecting to Processed Database:', err);
+            });
+          "
+
+      # - name: Run Server Tests
+      #   run: npm test -- --ci --maxWorkers=4
+
+      - name: Start Server
+        run: |
+          echo "Starting Server..."
+          node StartServer.js &
+          # Wait for the server to be fully ready
+          while ! curl -s http://localhost:${{ secrets.PORT }}/health; do
+            echo "Waiting for the server to be ready..."
+            sleep 5
+          done
+          echo "Server is ready!"
+
+      - name: Test API Health Check
+        run: |
+          echo "Testing API connection..."
+          curl -X GET "http://localhost:${{ secrets.PORT }}/health"

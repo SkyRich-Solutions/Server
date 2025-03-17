@@ -8,6 +8,14 @@ dotenv.config(); // Load environment variables
 
 const PORT = process.env.PORT;
 
+// Add health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        message: 'API is running smoothly'
+    });
+});
+
 // Start the server
 const startServer = async () => {
     const server = http.createServer(app); // Create HTTP server with Express
