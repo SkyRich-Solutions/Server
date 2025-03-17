@@ -73,13 +73,13 @@ jobs:
             });
           "
 
-      - name: Test API Health Check
-        run: |
-          echo "Testing API connection..."
-          curl -X GET "http://localhost:${{ secrets.PORT }}/health"
-
       - name: Run Server Tests
         run: npm test -- --ci --maxWorkers=4
 
       - name: Start Server
         run: node StartServer.js
+
+      - name: Test API Health Check
+        run: |
+          echo "Testing API connection..."
+          curl -X GET "http://localhost:${{ secrets.PORT }}/health"
