@@ -1,4 +1,4 @@
-import { processedDbInstance } from '../../Database/Database.js';
+import { processedDbInstance, Predictions_DataDbInstance } from '../../Database/Database.js';
 
 /**
  * POST Method: Receives cleaned data from Python and persists it into the processed database.
@@ -40,3 +40,14 @@ export const uploadCleanedData = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to save cleaned data', error: error.message });
     }
 };
+
+export const getPredictionData = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all('SELECT * FROM MaterialData');
+        console.log('Prediction data(Material Data):', data);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching prediction data:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch prediction data', error: error.message });
+    }
+}
