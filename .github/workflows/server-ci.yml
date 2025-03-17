@@ -41,34 +41,36 @@ jobs:
         run: |
           echo "Testing UnProcessed Database connection..."
           node -e "
-            import { open } from 'sqlite';
-            import sqlite3 from 'sqlite3';
+            const sqlite = require('sqlite');
+            const sqlite3 = require('sqlite3');
 
-            const unprocessedDbInstance = await open({
+            sqlite.open({
               filename: process.env.UNPROCESSED_DATABASE_PATH,
               driver: sqlite3.Database,
+            }).then(db => {
+              console.log('✅ UnProcessed Database Connected!');
+              db.close();
+            }).catch(err => {
+              console.error('Error connecting to UnProcessed Database:', err);
             });
-            unprocessedDbInstance
-              .then(() => { console.log('✅ UnProcessed Database Connected!'); })
-              .catch(err => { console.error('Error connecting to UnProcessed Database:', err); })
-              .finally(() => unprocessedDbInstance.close());
           "
 
       - name: Check Processed Database Connection
         run: |
           echo "Testing Processed Database connection..."
           node -e "
-            import { open } from 'sqlite';
-            import sqlite3 from 'sqlite3';
+            const sqlite = require('sqlite');
+            const sqlite3 = require('sqlite3');
 
-            const processedDbInstance = await open({
+            sqlite.open({
               filename: process.env.PROCESSED_DATABASE_PATH,
               driver: sqlite3.Database,
+            }).then(db => {
+              console.log('✅ Processed Database Connected!');
+              db.close();
+            }).catch(err => {
+              console.error('Error connecting to Processed Database:', err);
             });
-            processedDbInstance
-              .then(() => { console.log('✅ Processed Database Connected!'); })
-              .catch(err => { console.error('Error connecting to Processed Database:', err); })
-              .finally(() => processedDbInstance.close());
           "
 
       - name: Test API Health Check
