@@ -11,6 +11,9 @@
 # production
 /build
 
+#Uploaded csv files
+/uploads
+
 # misc
 .DS_Store
 .env
