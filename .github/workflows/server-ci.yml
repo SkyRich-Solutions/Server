@@ -1,0 +1,91 @@
+name: Server CI Pipeline
+
+on:
+  push:
+    branches:
+      - Development
+      - Feature
+      - server-ci-pipeline
+
+jobs:
+  server-build:
+    name: Install Dependencies and Run Server Checks
+    runs-on: ubuntu-latest
+
+    env:
+      PORT: ${{ secrets.PORT }}
+      UNPROCESSED_DATABASE_PATH: ${{ secrets.UNPROCESSED_DATABASE_PATH }}
+      PROCESSED_DATABASE_PATH: ${{ secrets.PROCESSED_DATABASE_PATH }}
+
+    steps:
+      - name: Checkout Server Code
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Server Dependencies
+        run: npm install
+        working-directory: Server
+
+      - name: Debug Current Working Directory
+        run: pwd
+        working-directory: Server
+
+      - name: Show Directory Tree
+        run: ls -R
+        working-directory: Server
+
+      - name: Check UnProcessed Database Connection
+        run: |
+          echo "Testing UnProcessed Database connection..."
+          node -e "
+            import { open } from 'sqlite';
+            import sqlite3 from 'sqlite3';
+
+            const unprocessedDbInstance = await open({
+              filename: process.env.UNPROCESSED_DATABASE_PATH,
+              driver: sqlite3.Database,
+            });
+            unprocessedDbInstance
+              .then(() => { console.log('✅ UnProcessed Database Connected!'); })
+              .catch(err => { console.error('Error connecting to UnProcessed Database:', err); })
+              .finally(() => unprocessedDbInstance.close());
+          "
+        working-directory: Server
+
+      - name: Check Processed Database Connection
+        run: |
+          echo "Testing Processed Database connection..."
+          node -e "
+            import { open } from 'sqlite';
+            import sqlite3 from 'sqlite3';
+
+            const processedDbInstance = await open({
+              filename: process.env.PROCESSED_DATABASE_PATH,
+              driver: sqlite3.Database,
+            });
+            processedDbInstance
+              .then(() => { console.log('✅ Processed Database Connected!'); })
+              .catch(err => { console.error('Error connecting to Processed Database:', err); })
+              .finally(() => processedDbInstance.close());
+          "
+        working-directory: Server
+
+      - name: Test API Health Check
+        run: |
+          echo "Testing API connection..."
+          curl -X GET "http://localhost:${{ secrets.PORT }}/health"
+        working-directory: Server
+
+      - name: Run Server Tests
+        run: npm test -- --ci --maxWorkers=4
+        working-directory: Server
+
+      - name: Start Server
+        run: node StartServer.js
+        working-directory: Server
