@@ -77,7 +77,15 @@ jobs:
       #   run: npm test -- --ci --maxWorkers=4
 
       - name: Start Server
-        run: node StartServer.js
+        run: |
+          echo "Starting Server..."
+          node StartServer.js &
+          # Wait for the server to be fully ready
+          while ! curl -s http://localhost:${{ secrets.PORT }}/health; do
+            echo "Waiting for the server to be ready..."
+            sleep 5
+          done
+          echo "Server is ready!"
 
       - name: Test API Health Check
         run: |
