@@ -3,12 +3,12 @@ import {unprocessedDbInstance, processedDbInstance, Predictions_DataDbInstance }
 /**
  * POST Method: Receives cleaned data from Python and persists it into the processed database.
  */
-export const uploadProcessedData = async (req, res) => {
+export const uploadProcessedTurbineData = async (req, res) => {
     try {
         const cleanedData = req.body;
 
         if (!Array.isArray(cleanedData) || cleanedData.length === 0) {
-            return res.status(400).json({ success: false, message: 'Invalid data format' });
+            return res.status(400).json({ success: false, message: 'Invalid TurbineData format' });
         }
 
         await processedDbInstance.run('BEGIN TRANSACTION');
@@ -33,11 +33,49 @@ export const uploadProcessedData = async (req, res) => {
 
         await processedDbInstance.run('COMMIT');
 
-        res.status(201).json({ success: true, message: 'Cleaned data successfully persisted' });
+        res.status(201).json({ success: true, message: 'Cleaned TurbineData successfully persisted' });
     } catch (error) {
         await processedDbInstance.run('ROLLBACK');
-        console.error('Error saving cleaned data:', error);
-        res.status(500).json({ success: false, message: 'Failed to save cleaned data', error: error.message });
+        console.error('Error saving cleaned TurbineData:', error);
+        res.status(500).json({ success: false, message: 'Failed to save cleaned TurbineData', error: error.message });
+    }
+};
+
+export const uploadProcessedMaterialData = async (req, res) => {
+    try {
+        const cleanedData = req.body;
+
+        if (!Array.isArray(cleanedData) || cleanedData.length === 0) {
+            return res.status(400).json({ success: false, message: 'Invalid MaterialData format' });
+        }
+
+        await processedDbInstance.run('BEGIN TRANSACTION');
+
+        for (const record of cleanedData) {
+            await processedDbInstance.run(
+                `INSERT OR REPLACE INTO MaterialData 
+                (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, 
+                Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, 
+                SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, 
+                TurbineLatitude, TurbineLongitude)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    record.FunctionalLoc, record.Description, record.MaintPlant, record.PlanningPlant, record.Platform,
+                    record.WTShortName, record.TurbineModel, record.MkVersion, record.Revision, record.NominalPower,
+                    record.OriginalEqManufact, record.SBOMForTurbine, record.SCADAName, record.SCADAParkID, 
+                    record.SCADACode, record.SCADAFunctionalLoc, record.TechID, record.Region, record.Technology, 
+                    record.HubHeight, record.TowerHeight, record.TurbineClass, record.TurbineLatitude, record.TurbineLongitude
+                ]
+            );
+        }
+
+        await processedDbInstance.run('COMMIT');
+
+        res.status(201).json({ success: true, message: 'Cleaned MaterialData successfully persisted' });
+    } catch (error) {
+        await processedDbInstance.run('ROLLBACK');
+        console.error('Error saving cleaned MaterialData:', error);
+        res.status(500).json({ success: false, message: 'Failed to save cleaned MaterialData', error: error.message });
     }
 };
 
@@ -98,15 +136,27 @@ export const uploadPredictionsData = async (req, res) => {
     }
 };
 
-export const getUnprocessedData
+export const getUnprocessedTurbineData
 = async (req, res) => {
     try {
         const data = await unprocessedDbInstance.all('SELECT * FROM TurbineData');
-        console.log('Unprocessed data(Turbine Data):', data);
+        console.log('Unprocessed TurbineData:', data);
         res.status(200).json({ success: true, data });
     } catch (error) {
-        console.error('Error fetching unprocessed data:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed data', error: error.message });
+        console.error('Error fetching unprocessed TurbineData:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed TurbineData', error: error.message });
+    }
+}
+
+export const getUnprocessedMaterialData
+= async (req, res) => {
+    try {
+        const data = await unprocessedDbInstance.all('SELECT * FROM MaterialData');
+        console.log('Unprocessed MaterialData:', data);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching unprocessed MaterialData:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed MaterialData', error: error.message });
     }
 }
 
