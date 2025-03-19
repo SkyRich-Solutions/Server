@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 export const ScriptController = async (req, res) => {
     try {
         // Logic for selecting which script to run
-        const scriptName = 'processTurbineData'; // Predefined or determined based on your logic
+        const scriptName = 'main'; // Predefined or determined based on your logic
         const scriptFolderPath = path.join(
             __dirname,
             '..',
