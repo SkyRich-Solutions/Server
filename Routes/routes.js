@@ -1,6 +1,4 @@
 import express from "express";
-import { upload, uploadCSV} from "../Controller/UploadController.js";
-import express from 'express';
 import {
     upload,
     uploadCSV,
@@ -8,7 +6,7 @@ import {
 } from '../Controller/UploadController.js';
 import {
     getPredictionsData,
-    uploadProcessedData, uploadPredictionsData, getPredictionsData, getProcessedData
+    uploadProcessedData, uploadPredictionsData, getProcessedData
 } from '../Controller/ProcessedController/DataController.js';
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 
