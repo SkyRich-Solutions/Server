@@ -40,7 +40,6 @@ export const uploadProcessedTurbineData = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to save cleaned TurbineData', error: error.message });
     }
 };
-
 export const uploadProcessedMaterialData = async (req, res) => {
     try {
         const cleanedData = req.body;
@@ -54,17 +53,13 @@ export const uploadProcessedMaterialData = async (req, res) => {
         for (const record of cleanedData) {
             await processedDbInstance.run(
                 `INSERT OR REPLACE INTO MaterialData 
-                (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, 
-                Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, 
-                SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, 
-                TurbineLatitude, TurbineLongitude)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
+                Serial_No_Profile, ReplacementPart, UsedInSBom, Violation)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    record.FunctionalLoc, record.Description, record.MaintPlant, record.PlanningPlant, record.Platform,
-                    record.WTShortName, record.TurbineModel, record.MkVersion, record.Revision, record.NominalPower,
-                    record.OriginalEqManufact, record.SBOMForTurbine, record.SCADAName, record.SCADAParkID, 
-                    record.SCADACode, record.SCADAFunctionalLoc, record.TechID, record.Region, record.Technology, 
-                    record.HubHeight, record.TowerHeight, record.TurbineClass, record.TurbineLatitude, record.TurbineLongitude
+                    record.Material, record.Plant, record.Description, record.PlantSpecificMaterialStatus, 
+                    record.BatchManagementPlant, record.SerialNoProfile, record.ReplacementPart, 
+                    record.UsedInSBom, record.Violation
                 ]
             );
         }
@@ -174,8 +169,8 @@ export const getProcessedData
 
 export const getPredictionsData = async (req, res) => {
     try {
-        const data = await Predictions_DataDbInstance.all('SELECT * FROM MaterialData');
-        console.log('Prediction data(Material Data):', data);
+        const data = await Predictions_DataDbInstance.all('SELECT * FROM TurbineData');
+        console.log('Prediction data(Turbine Data):', data);
         res.status(200).json({ success: true, data });
     } catch (error) {
         console.error('Error fetching prediction data:', error);
