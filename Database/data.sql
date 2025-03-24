@@ -1,4 +1,4 @@
--- database: Processed Data.db
+-- database: UnProcessed Data.db
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
 

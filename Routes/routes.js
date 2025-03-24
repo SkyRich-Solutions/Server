@@ -29,7 +29,6 @@ router.post('/uploadProcessedData', uploadProcessedData);
 router.post('/uploadPredictionsData', uploadPredictionsData);
 
 // Common routes
-router.get('/unprocessedData', getUnprocessedData);
 
 router.get('/fetch_UnprocessedData', getUnprocessedData);
 router.get('/fetch_ProcessedData', getProcessedData);
