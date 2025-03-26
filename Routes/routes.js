@@ -32,7 +32,6 @@ router.post('/uploadProcessedMaterialData', uploadProcessedMaterialData);
 router.post('/uploadPredictionsData', uploadPredictionsData);
 
 // Common routes
-router.get('/unprocessedData', getUnprocessedData);
 
 router.get('/fetch_UnprocessedTurbineData', getUnprocessedTurbineData);
 router.get('/fetch_UnprocessedMaterialData', getUnprocessedMaterialData);

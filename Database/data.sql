@@ -1,6 +1,3 @@
-
-
--- database: Processed Data.db and unprocessed data.db
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
 

@@ -33,7 +33,8 @@ export const ScriptController = async (req, res) => {
 
         pythonProcess.on('close', (code) => {
             console.log(`Python script exited with code ${code}`);
-            res.json({ output: output.trim() }); // Send script output back to frontend
+            // console.log('Output:\n', output.trim());
+            res.json('Data Cleaning Complete ✅'); // Send script output back to frontend
         });
     } catch (error) {
         console.error('Error running Python script:', error);
