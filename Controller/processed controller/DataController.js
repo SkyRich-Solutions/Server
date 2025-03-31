@@ -51,3 +51,51 @@ export const getPredictionData = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to fetch prediction data', error: error.message });
     }
 }
+
+export const getTechnicians = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all('SELECT Technician_ID, Name FROM Technician');
+        console.log('Technician data:', data);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching technician data:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch technician data', error: error.message });
+    }
+}
+
+export const getLocations = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all('SELECT Location_ID, Location_Name FROM Location');
+        console.log('Location data:', data);
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching location data:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch location data', error: error.message });
+    }
+}
+
+export const UploadFaultReport = async (req, res) => {
+    try {
+        const { Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status } = req.body;
+        const fileBuffer = req.file ? req.file.buffer : null;
+
+        if (!Technician_ID || !TurbineLocation || !Report_Date || !Fault_Description || !Report_Status) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        const query = `
+            INSERT INTO FaultReport (Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status, Updated_Time, Attachment)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+        `;
+
+        const params = [Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status, fileBuffer];
+
+        await Predictions_DataDbInstance.run(query, params);
+
+        res.status(201).json({ success: true, message: "Fault report submitted successfully" });
+    } catch (error) {
+        console.error("Error submitting fault report:", error);
+        res.status(500).json({ success: false, message: "Failed to submit fault report", error: error.message });
+    }
+};
+
