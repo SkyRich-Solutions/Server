@@ -57,5 +57,3 @@ router.get('/technicians', getTechnicians);
 router.get('/locations', getLocations);
 
 export default router;
-
-getUnprocessedTurbineData;
