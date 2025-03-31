@@ -1,28 +1,61 @@
-import express from "express";
-import { upload, uploadCSV , getUnprocessedData, UploadFaultReport} from "../Controller/UploadController.js";
-import { uploadCleanedData, getPredictionData , getTechnicians , getLocations} from "../Controller/processed controller/DataController.js";
-import multer from "multer";
+import express from 'express';
+import {
+    upload,
+    uploadCSV,
+    getUnprocessedMaterialData,
+    getUnprocessedTurbineData,
+    UploadFaultReport
+} from '../Controller/UploadController.js';
+import {
+    getPredictionsData,
+    uploadProcessedMaterialData,
+    uploadProcessedTurbineData,
+    uploadMaterialPredictionsData,
+    uploadTurbinePredictionsData,
+    getProcessedMaterialData,
+    getProcessedTurbineData,
+    syncPlantCoordinates,
+    getTechnicians,
+    getLocations
+} from '../Controller/ProcessedController/DataController.js';
+import { ScriptController } from '../Controller/Script/ScriptController.js';
+
 const router = express.Router();
 
-// Configure storage
+import multer from 'multer';
+
 const storage = multer.memoryStorage(); // Store as buffer in memory
 const uploadpdf = multer({ storage: storage });
-
-// In your routes file
-router.post('/faultReport', uploadpdf.single('file'), UploadFaultReport);
 // Initialize express router
 
-router.get("/", (req, res) => {
-    res.send("🚀 API Running!");
+router.get('/', (req, res) => {
+    res.send('🚀 API Running!');
 });
 
+// Front end routes
+router.get('/uploadPredictionData', getPredictionsData);
+router.post('/uploadFile', upload.single('file'), uploadCSV);
+router.post('/faultReport', uploadpdf.single('file'), UploadFaultReport);
+router.post('/run-python', ScriptController);
 
-router.post("/uploadFile", upload.single('file'), uploadCSV);
-router.get('/unprocessedData', getUnprocessedData);
-router.post('/uploadData', uploadCleanedData);
-router.get('/uploadPredictionData', getPredictionData);
-router.get("/technicians", getTechnicians);
-router.get("/locations", getLocations);
+// Backend routes
+router.post('/uploadProcessedTurbineData', uploadProcessedTurbineData);
+router.post('/uploadProcessedMaterialData', uploadProcessedMaterialData);
+router.post('/uploadMaterialPredictionsData', uploadMaterialPredictionsData);
+router.post('/uploadTurbinePredictionsData', uploadTurbinePredictionsData);
+router.post('/syncPlantCoordinates', syncPlantCoordinates);
 
+// Common routes
+
+router.get('/fetch_UnprocessedTurbineData', getUnprocessedTurbineData);
+router.get('/fetch_UnprocessedMaterialData', getUnprocessedMaterialData);
+router.get('/fetch_ProcessedMaterialData', getProcessedMaterialData);
+router.get('/fetch_ProcessedTurbineData', getProcessedTurbineData);
+router.get('/fetch_PredictionsData', getPredictionsData);
+
+router.get('/technicians', getTechnicians);
+router.get('/locations', getLocations);
 
 export default router;
+
+getUnprocessedTurbineData;
