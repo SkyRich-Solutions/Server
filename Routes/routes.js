@@ -2,7 +2,6 @@ import express from "express";
 import {
     upload,
     uploadCSV,
-    getUnprocessedData, 
     getUnprocessedMaterialData, 
     getUnprocessedTurbineData
 } from '../Controller/UploadController.js';
