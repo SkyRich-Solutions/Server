@@ -141,21 +141,52 @@ const determineTargetTable = (data) => {
     return { table: null, columnMapping: null };
 };
 
-// Function to insert extracted data into the unprocessed database
+function parseCoordinate(coord) {
+    if (!coord) return null;
+    if (typeof coord === 'number') return coord;
+
+    try {
+        const parts = String(coord).split(',');
+        if (parts.length === 4) {
+            const deg = parseFloat(parts[0]);
+            const min = parseFloat(parts[1]);
+            const sec = parseFloat(parts[2]);
+            const milli = parseFloat(parts[3]);
+            const decimal = Math.abs(deg) + min / 60 + (sec + milli / 1000) / 3600;
+            return deg < 0 ? -decimal : decimal;
+        }
+
+        return parseFloat(coord.replace(',', '.'));
+    } catch {
+        return null;
+    }
+}
+
 const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
     try {
         if (!unprocessedDbInstance) {
             throw new Error('Unprocessed database connection is not established');
         }
 
-        // Generate query dynamically
         const dbColumns = Object.values(columnMapping);
         const placeholders = dbColumns.map(() => '?').join(', ');
         const query = `INSERT INTO ${table} (${dbColumns.join(', ')}) VALUES (${placeholders})`;
 
-        // Insert each row dynamically
         for (const row of data) {
-            const values = Object.keys(columnMapping).map(csvHeader => row[csvHeader] || null);
+            const values = Object.keys(columnMapping).map(csvHeader => {
+                let value = row[csvHeader] || null;
+
+                // ✅ Fix coordinate parsing here
+                if (
+                    columnMapping[csvHeader] === "TurbineLatitude" ||
+                    columnMapping[csvHeader] === "TurbineLongitude"
+                ) {
+                    value = parseCoordinate(value);
+                }
+
+                return value;
+            });
+
             await unprocessedDbInstance.run(query, values);
         }
 
