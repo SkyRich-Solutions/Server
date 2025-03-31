@@ -1,13 +1,12 @@
-import {
-    unprocessedDbInstance,
-    InitializeDatabases
-} from '../Database/Database.js';
+import { unprocessedDbInstance, InitializeDatabases , Predictions_DataDbInstance} from '../Database/Database.js';
 import multer from 'multer';
 import fs from 'fs';
 import Papa from 'papaparse';
 
 // Multer storage setup
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({
+    dest: 'uploads/',
+});
 
 // Define expected headers for different tables
 const tableSchemaMapping = {
@@ -279,3 +278,27 @@ export const getUnprocessedMaterialData = async (req, res) => {
     }
 };
 
+export const UploadFaultReport = async (req, res) => {
+    try {
+        const { Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status } = req.body;
+        const fileBuffer = req.file ? req.file.buffer : null;
+
+        if (!Technician_ID || !TurbineLocation || !Report_Date || !Fault_Description || !Report_Status || !fileBuffer) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        const query = `
+            INSERT INTO FaultReport (Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status, Updated_Time, Attachment)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+        `;
+
+        const params = [Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status, fileBuffer];
+
+        await Predictions_DataDbInstance.run(query, params);
+
+        res.status(201).json({ success: true, message: "Fault report submitted successfully" });
+    } catch (error) {
+        console.error("Error submitting fault report:", error);
+        res.status(500).json({ success: false, message: "Failed to submit fault report", error: error.message });
+    }
+};

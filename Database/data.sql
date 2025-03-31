@@ -164,18 +164,12 @@ CREATE TABLE FaultReport (
     Fault_Description TEXT,
     Report_Status VARCHAR(50),
     Updated_Time TIMESTAMP,
-    Attachment_ID INT,
+    Attachment BLOB,
     FOREIGN KEY (Technician_ID) REFERENCES Technician(Technician_ID),
-    FOREIGN KEY (TurbineLocation) REFERENCES Location(Location_ID),
-    FOREIGN KEY (Attachment_ID) REFERENCES Attachment(Attachment_ID)
+    FOREIGN KEY (TurbineLocation) REFERENCES Location(Location_ID)
 );
 
-CREATE TABLE Attachment (
-    Attachment_ID INT PRIMARY KEY,
-    Report_ID INT,
-    Attachment_Description TEXT,
-    FOREIGN KEY (Report_ID) REFERENCES FaultReport(Report_ID)
-);
+
 
 CREATE TABLE TurbineMaintenanceLog (
     Log_ID INT PRIMARY KEY,
