@@ -1,4 +1,3 @@
--- database: UnProcessed Data.db
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
 
@@ -8,9 +7,10 @@ CREATE TABLE MaterialData (
     Description TEXT,
     PlantSpecificMaterialStatus TEXT,
     BatchManagementPlant TEXT,
-    SerialNoProfile TEXT,
+    Serial_No_Profile TEXT,
     ReplacementPart TEXT,
     UsedInSBom TEXT,
+    Violation TEXT,
     PRIMARY KEY (Material, Plant)
 );
 
@@ -70,23 +70,23 @@ PRAGMA table_info(TurbineData);
 
 -- Insert the data into the Material Table
 
-INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, SerialNoProfile, ReplacementPart, UsedInSBom)
+INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, Serial_No_Profile, ReplacementPart, UsedInSBom, Violation)
 VALUES
-(5130, 'Other merchandise', 'DKS1', 'Z3', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '15S1', 'Z5', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '24S1', 'Z5', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '25S1', 'Z5', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '26S1', 'Z5', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '43S1', 'Z4', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '51S1', 'Z4', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '53S1', 'Z4', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', '54S1', 'Z4', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'DOS1', 'Z4', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HNS1', 'Z4', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS1', 'Z7', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS3', 'Z7', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HUS1', 'Z8', NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'INS5', 'Z4', NULL, NULL, NULL, NULL);
+(5130, 'Other merchandise', 'DKS1', 'Z3', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '15S1', 'Z5', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '24S1', 'Z5', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '25S1', 'Z5', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '26S1', 'Z5', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '43S1', 'Z4', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '51S1', 'Z4', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '53S1', 'Z4', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '54S1', 'Z4', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'DOS1', 'Z4', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HNS1', 'Z4', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS1', 'Z7', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS3', 'Z7', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HUS1', 'Z8', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'INS5', 'Z4', NULL, NULL, NULL, NULL, NULL);
 
 -- Insert the data into the Turbine Table
 
@@ -110,7 +110,7 @@ VALUES
 ('AR0003=G009', 'WT Arauco I & II ,AG-89 (61028449)', '50S1', '50S1', 'SG2X', 'AG-89', 'SG 2.1-114', '', '', '2.625 KW', 'Siemens Gamesa', 'ZZ0011', 'ARAUCO', '', 'W1187', '', '61028449', 'Latin America', 'DAC', '80,00 m', '', 'IIA', '-2,87,29,395', '-6,67,36,026'),
 ('AR0003=G010', 'WT Arauco I & II ,AG-90 (61028450)', '50S1', '50S1', 'SG2X', 'AG-90', 'SG 2.1-114', '', '', '2.625 KW', 'Siemens Gamesa', 'ZZ0011', 'ARAUCO', '', 'W1187', '', '61028450', 'Latin America', 'DAC', '80,00 m', '', 'IIA', '-2,87,29,434', '-6,67,38,359');
 
-
+--Prediction_Data.db
 
 -- Drop tables if they exist  
 DROP TABLE IF EXISTS TurbineMaintenanceLog;  
