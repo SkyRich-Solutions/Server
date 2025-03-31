@@ -8,7 +8,9 @@ import {
 } from '../Controller/UploadController.js';
 import {
     getPredictionsData,
-    uploadProcessedMaterialData, uploadProcessedTurbineData, uploadPredictionsData, getProcessedData
+    uploadProcessedMaterialData, uploadProcessedTurbineData, 
+    uploadMaterialPredictionsData, uploadTurbinePredictionsData, 
+    getProcessedMaterialData, getProcessedTurbineData, syncPlantCoordinates
 } from '../Controller/ProcessedController/DataController.js';
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 
@@ -29,13 +31,16 @@ router.post('/run-python', ScriptController);
 // Backend routes
 router.post('/uploadProcessedTurbineData', uploadProcessedTurbineData);
 router.post('/uploadProcessedMaterialData', uploadProcessedMaterialData);
-router.post('/uploadPredictionsData', uploadPredictionsData);
+router.post('/uploadMaterialPredictionsData', uploadMaterialPredictionsData);
+router.post('/uploadTurbinePredictionsData', uploadTurbinePredictionsData);
+router.post('/syncPlantCoordinates', syncPlantCoordinates);
 
 // Common routes
 
 router.get('/fetch_UnprocessedTurbineData', getUnprocessedTurbineData);
 router.get('/fetch_UnprocessedMaterialData', getUnprocessedMaterialData);
-router.get('/fetch_ProcessedData', getProcessedData);
+router.get('/fetch_ProcessedMaterialData', getProcessedMaterialData);
+router.get('/fetch_ProcessedTurbineData', getProcessedTurbineData);
 router.get('/fetch_PredictionsData', getPredictionsData);
 
 export default router;
