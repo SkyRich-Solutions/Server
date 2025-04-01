@@ -1,16 +1,15 @@
 import express from "express";
 import {
     upload,
-    uploadCSV,
-    getUnprocessedData, 
-    getUnprocessedMaterialData, 
-    getUnprocessedTurbineData
+    uploadCSV
 } from '../Controller/UploadController.js';
 import {
     getPredictionsData,
     uploadProcessedMaterialData, uploadProcessedTurbineData, 
     uploadMaterialPredictionsData, uploadTurbinePredictionsData, 
-    getProcessedMaterialData, getProcessedTurbineData, syncPlantCoordinates
+    getProcessedMaterialData, getProcessedTurbineData, syncPlantCoordinates,
+    getUnprocessedMaterialData,
+    getUnprocessedTurbineData
 } from '../Controller/ProcessedController/DataController.js';
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 
@@ -36,8 +35,6 @@ router.post('/uploadTurbinePredictionsData', uploadTurbinePredictionsData);
 router.post('/syncPlantCoordinates', syncPlantCoordinates);
 
 // Common routes
-router.get('/unprocessedData', getUnprocessedData);
-
 router.get('/fetch_UnprocessedTurbineData', getUnprocessedTurbineData);
 router.get('/fetch_UnprocessedMaterialData', getUnprocessedMaterialData);
 router.get('/fetch_ProcessedMaterialData', getProcessedMaterialData);
@@ -45,5 +42,3 @@ router.get('/fetch_ProcessedTurbineData', getProcessedTurbineData);
 router.get('/fetch_PredictionsData', getPredictionsData);
 
 export default router;
-
-getUnprocessedTurbineData

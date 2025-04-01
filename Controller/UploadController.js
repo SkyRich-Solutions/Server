@@ -70,11 +70,9 @@ export const uploadCSV = async (req, res) => {
 
         const filePath = req.file.path;
 
-        // Read and parse CSV file
         const data = await readCSVFile(filePath);
-
-        // Determine the target table
         const tableSelection = determineTargetTable(data);
+
         if (!tableSelection.table) {
             fs.unlinkSync(filePath);
             return res.status(400).json({
@@ -88,11 +86,7 @@ export const uploadCSV = async (req, res) => {
         }
 
         const { table, columnMapping } = tableSelection;
-
-        // Insert data into the unprocessed database
         await insertDataIntoUnprocessedDB(data, table, columnMapping);
-
-        // Remove temporary file
         fs.unlinkSync(filePath);
 
         res.status(200).json({ success: true, message: `File uploaded and data inserted into ${table} successfully!` });
@@ -103,7 +97,7 @@ export const uploadCSV = async (req, res) => {
     }
 };
 
-// Function to read and parse CSV
+// Read and parse CSV
 const readCSVFile = (filePath) => {
     return new Promise((resolve, reject) => {
         fs.readFile(filePath, 'utf8', (err, data) => {
@@ -119,7 +113,7 @@ const readCSVFile = (filePath) => {
     });
 };
 
-// Function to determine the exact match table based on headers
+// Determine which table the CSV belongs to
 const determineTargetTable = (data) => {
     if (!data || data.length === 0) return { table: null, columnMapping: null };
 
@@ -128,7 +122,6 @@ const determineTargetTable = (data) => {
     for (const [tableName, schema] of Object.entries(tableSchemaMapping)) {
         const expectedHeaders = schema.headers;
 
-        // Check for exact match
         const isExactMatch =
             csvHeaders.length === expectedHeaders.length &&
             csvHeaders.every(header => expectedHeaders.includes(header));
@@ -162,6 +155,7 @@ function parseCoordinate(coord) {
     }
 }
 
+// Insert data into unprocessed database
 const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
     try {
         if (!unprocessedDbInstance) {
@@ -176,7 +170,6 @@ const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
             const values = Object.keys(columnMapping).map(csvHeader => {
                 let value = row[csvHeader] || null;
 
-                // ✅ Fix coordinate parsing here
                 if (
                     columnMapping[csvHeader] === "TurbineLatitude" ||
                     columnMapping[csvHeader] === "TurbineLongitude"
@@ -199,47 +192,3 @@ const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
 // Export Multer upload middleware
 export { upload };
 
-export const getUnprocessedTurbineData = async (req, res) => {
-    try {
-        const unprocessedData = await unprocessedDbInstance.all(`SELECT * FROM TurbineData`);
-
-        if (!unprocessedData || unprocessedData.length === 0) {
-            return res.status(404).json({ success: false, message: 'No unprocessed TurbineData found' });
-        }
-
-        res.status(200).json({ success: true, data: unprocessedData });
-    } catch (error) {
-        console.error('Error fetching unprocessed data:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed TurbineData', error: error.message });
-    }
-};
-
-export const getUnprocessedMaterialData = async (req, res) => {
-    try {
-        const unprocessedData = await unprocessedDbInstance.all(`SELECT * FROM MaterialData`);
-
-        if (!unprocessedData || unprocessedData.length === 0) {
-            return res.status(404).json({ success: false, message: 'No unprocessed MaterialData found' });
-        }
-
-        res.status(200).json({ success: true, data: unprocessedData });
-    } catch (error) {
-        console.error('Error fetching unprocessed MaterialData:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed MaterialData', error: error.message });
-    }
-};
-
-export const getUnprocessedData = async (req, res) => {
-    try {
-        const unprocessedData = await unprocessedDbInstance.all(`SELECT * FROM MaterialData`);
-
-        if (!unprocessedData || unprocessedData.length === 0) {
-            return res.status(404).json({ success: false, message: 'No unprocessed MaterialData found' });
-        }
-
-        res.status(200).json({ success: true, data: unprocessedData });
-    } catch (error) {
-        console.error('Error fetching unprocessed MaterialData:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed MaterialData', error: error.message });
-    }
-};
