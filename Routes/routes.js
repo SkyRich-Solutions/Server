@@ -15,6 +15,7 @@ import {
     getProcessedMaterialData,
     getProcessedTurbineData,
     syncPlantCoordinates,
+    syncMaterialNumbers,
     getTechnicians,
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
@@ -44,6 +45,8 @@ router.post('/uploadProcessedMaterialData', uploadProcessedMaterialData);
 router.post('/uploadMaterialPredictionsData', uploadMaterialPredictionsData);
 router.post('/uploadTurbinePredictionsData', uploadTurbinePredictionsData);
 router.post('/syncPlantCoordinates', syncPlantCoordinates);
+router.post('/syncMaterialNumbers', syncMaterialNumbers);
+
 
 // Common routes
 

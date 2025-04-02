@@ -92,7 +92,7 @@ PRAGMA foreign_keys = ON;
 -- Create tables
 
 CREATE TABLE MaterialData (
-    Material INTEGER,
+    Material TEXT,
     Plant TEXT,
     Description TEXT,
     PlantSpecificMaterialStatus TEXT,
@@ -169,8 +169,6 @@ CREATE TABLE FaultReport (
     FOREIGN KEY (TurbineLocation) REFERENCES Location(Location_ID)
 );
 
-
-
 CREATE TABLE TurbineMaintenanceLog (
     Log_ID INT PRIMARY KEY,
     TurbineLocation INT,
@@ -195,7 +193,8 @@ CREATE TABLE SerialNumberProfile (
 );
 
 CREATE TABLE Material (
-    Material_ID INT PRIMARY KEY,
+    Material_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Material_A9B_Number TEXT,
     Material_Type VARCHAR(100),
     Material_Description TEXT,
     Is_Batch_Managed BOOLEAN
