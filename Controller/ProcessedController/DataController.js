@@ -106,10 +106,48 @@ export const syncPlantCoordinates = async (req, res) => {
     }
 };
 
+export const syncMaterialNumbers = async (req, res) => {
+  const { materials } = req.body;
 
-/**
- * POST Method: Receives cleaned data from Python and persists it into the processed database.
- */
+  if (!Array.isArray(materials) || materials.length === 0) {
+      return res.status(400).json({ success: false, message: "Invalid materials list" });
+  }
+
+  try {
+      await processedDbInstance.run("BEGIN TRANSACTION");
+      await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
+
+      for (const code of materials) {
+          const trimmed = code?.trim();
+          if (!trimmed) {
+              console.warn("❌ Skipping invalid material code:", code);
+              continue;
+          }
+
+          const insertQuery = `
+              INSERT INTO Material (Material_A9B_Number)
+              VALUES (?)
+              ON CONFLICT(Material_A9B_Number) DO NOTHING
+          `;
+
+          await processedDbInstance.run(insertQuery, [trimmed]);
+          await Predictions_DataDbInstance.run(insertQuery, [trimmed]);
+      }
+
+      await processedDbInstance.run("COMMIT");
+      await Predictions_DataDbInstance.run("COMMIT");
+
+      res.status(200).json({ success: true, message: "✅ Synced Material_A9B_Number entries" });
+  } catch (error) {
+      await processedDbInstance.run("ROLLBACK");
+      await Predictions_DataDbInstance.run("ROLLBACK");
+
+      console.error("❌ Error syncing material numbers:", error);
+      res.status(500).json({ success: false, message: "Failed to sync materials", error: error.message });
+  }
+};
+
+
 export const uploadProcessedTurbineData = async (req, res) => {
     try {
         const cleanedData = req.body;
