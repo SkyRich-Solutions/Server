@@ -21,22 +21,25 @@ try {
 export const syncPlantCoordinates = async (req, res) => {
     const { plants } = req.body;
 
-    if (!Array.isArray(plants) || plants.length === 0) {
-        return res
-            .status(400)
-            .json({ success: false, message: 'Invalid plant list' });
+    if (!Array.isArray(plants)) {
+      return res.status(400).json({ success: false, message: 'Invalid plant list' });
     }
 
     try {
         await processedDbInstance.run('BEGIN TRANSACTION');
         await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
-        for (const {
-            code,
-            isPlant,
-            isPlanningPlant,
-            isManufacturingPlant
-        } of plants) {
+        for (const raw of plants) {
+          const code = raw.code?.trim();
+          const isPlant = !!raw.isPlant;
+          const isPlanningPlant = !!raw.isPlanningPlant;
+          const isManufacturingPlant = !!raw.isManufacturingPlant;
+        
+          if (!code) {
+            console.warn('❌ Skipping plant entry due to missing code:', raw);
+            continue;
+          }
+        
             const prefix = code.slice(0, 2);
             let coords = geoMapping[prefix];
             let defaulted = 0;
@@ -48,31 +51,28 @@ export const syncPlantCoordinates = async (req, res) => {
 
             const [lat, lon] = coords;
 
-            // Preserve previously set true flags
             const existing = await processedDbInstance.get(
                 `SELECT IsPlant, IsPlanningPlant, IsManufacturingPlant FROM Plant WHERE Plant_Name = ?`,
                 [code]
             );
 
             const finalIsPlant = isPlant || (existing?.IsPlant ?? 0);
-            const finalIsPlanningPlant =
-                isPlanningPlant || (existing?.IsPlanningPlant ?? 0);
-            const finalIsManufacturingPlant =
-                isManufacturingPlant || (existing?.IsManufacturingPlant ?? 0);
+            const finalIsPlanningPlant = isPlanningPlant || (existing?.IsPlanningPlant ?? 0);
+            const finalIsManufacturingPlant = isManufacturingPlant || (existing?.IsManufacturingPlant ?? 0);
 
             const query = `
-          INSERT INTO Plant (Plant_Name, Plant_Latitude, Plant_Longitude, Defaulted, IsPlant, IsPlanningPlant, IsManufacturingPlant)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(Plant_Name) DO UPDATE SET
-            Plant_Latitude = excluded.Plant_Latitude,
-            Plant_Longitude = excluded.Plant_Longitude,
-            Defaulted = excluded.Defaulted,
-            IsPlant = IsPlant OR excluded.IsPlant,
-            IsPlanningPlant = IsPlanningPlant OR excluded.IsPlanningPlant,
-            IsManufacturingPlant = IsManufacturingPlant OR excluded.IsManufacturingPlant
-        `;
+              INSERT INTO Plant (Plant_Name, Plant_Latitude, Plant_Longitude, Defaulted, IsPlant, IsPlanningPlant, IsManufacturingPlant)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(Plant_Name) DO UPDATE SET
+                Plant_Latitude = excluded.Plant_Latitude,
+                Plant_Longitude = excluded.Plant_Longitude,
+                Defaulted = excluded.Defaulted,
+                IsPlant = IsPlant OR excluded.IsPlant,
+                IsPlanningPlant = IsPlanningPlant OR excluded.IsPlanningPlant,
+                IsManufacturingPlant = IsManufacturingPlant OR excluded.IsManufacturingPlant
+            `;
 
-            await processedDbInstance.run(query, [
+            const values = [
                 code,
                 lat,
                 lon,
@@ -80,17 +80,10 @@ export const syncPlantCoordinates = async (req, res) => {
                 finalIsPlant ? 1 : 0,
                 finalIsPlanningPlant ? 1 : 0,
                 finalIsManufacturingPlant ? 1 : 0
-            ]);
+            ];
 
-            await Predictions_DataDbInstance.run(query, [
-                code,
-                lat,
-                lon,
-                defaulted,
-                finalIsPlant ? 1 : 0,
-                finalIsPlanningPlant ? 1 : 0,
-                finalIsManufacturingPlant ? 1 : 0
-            ]);
+            await processedDbInstance.run(query, values);
+            await Predictions_DataDbInstance.run(query, values);
         }
 
         await processedDbInstance.run('COMMIT');
@@ -112,6 +105,7 @@ export const syncPlantCoordinates = async (req, res) => {
         });
     }
 };
+
 
 /**
  * POST Method: Receives cleaned data from Python and persists it into the processed database.
