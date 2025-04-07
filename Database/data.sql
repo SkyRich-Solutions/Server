@@ -1,5 +1,4 @@
 
-
 -- Insert the data into the Material Table
 
 INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, UnknownPlant)
@@ -13,9 +12,9 @@ VALUES
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', '51S1', 'Z4', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', '53S1', 'Z4', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', '54S1', 'Z4', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'DOS1', 'Z4', NULL, 'ZPP2', NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', '50S1', 'Z4', NULL, 'ZPP2', NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HNS1', 'Z4', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS1', 'Z7', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(50001, '2P K6 6A S202 CIRCUIT BREAKER', 'DOS1', 'Z7', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS3', 'Z7', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HUS1', 'Z8', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'INS5', 'Z4', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -144,10 +143,12 @@ CREATE TABLE TurbineData (
         ON DELETE SET NULL
 );
 
-
 CREATE TABLE Location (
-    Location_ID INT PRIMARY KEY,
-    Location_Name TEXT
+    Location_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Location_Name TEXT UNIQUE,
+    FOREIGN KEY (Location_Name) REFERENCES TurbineData(FunctionalLoc)
+        ON UPDATE CASCADE 
+        ON DELETE SET NULL
 );
 
 CREATE TABLE Technician (
@@ -157,11 +158,12 @@ CREATE TABLE Technician (
 );
 
 CREATE TABLE FaultReport (
-    Report_ID INT PRIMARY KEY,
+    Report_ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Technician_ID INT,
-    TurbineLocation INT,
+    TurbineLocation INTEGER,
     Report_Date DATE,
-    Fault_Description TEXT,
+    Fault_Type TEXT DEFAULT 'Replacement Part',
+    Material_ID INTEGER,
     Report_Status VARCHAR(50),
     Updated_Time TIMESTAMP,
     Attachment BLOB,
@@ -194,8 +196,8 @@ CREATE TABLE SerialNumberProfile (
 
 CREATE TABLE Material (
     Material_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    Material_A9B_Number TEXT,
-    Material_Type VARCHAR(100),
+    Material_A9B_Number TEXT UNIQUE,
+    MaterialCategory TEXT,
     Material_Description TEXT,
     Is_Batch_Managed BOOLEAN
 );
@@ -212,9 +214,9 @@ CREATE TABLE Deliveries (
 );
 
 CREATE TABLE ReplacementPart (
-    ReplacementPart_ID INT PRIMARY KEY,
-    Delivery_ID INT,
-    Material_ID INT,
+    ReplacementPart_ID INTEGER PRIMARY KEY,
+    Delivery_ID INTEGER,
+    Material_ID INTEGER,
     FOREIGN KEY (Delivery_ID) REFERENCES Deliveries(Delivery_ID),
     FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID)
 );
@@ -250,106 +252,28 @@ CREATE TABLE DemandForecastingData (
     FOREIGN KEY (TurbineLocation) REFERENCES Location(Location_ID)
 );
 
--- -- Insert test data
--- -- Insert data into MaterialData
--- INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, Serial_No_Profile, ReplacementPart, UsedInSBom, Violation)
--- VALUES
--- (5130, 'Other merchandise', 'DKS1', 'Z3', NULL, NULL, NULL, NULL, NULL),
--- (50001, '2P K6 6A S202 CIRCUIT BREAKER', '15S1', 'Z5', NULL, NULL, NULL, NULL, NULL),
--- (50001, '2P K6 6A S202 CIRCUIT BREAKER', '24S1', 'Z5', NULL, NULL, NULL, NULL, NULL),
--- (50002, 'Test Material', '99S1', 'Z1', NULL, NULL, NULL, NULL, NULL);
 
--- -- Insert data into TurbineData
--- INSERT INTO TurbineData (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, TurbineLatitude, TurbineLongitude)
--- VALUES
--- ('AR0004=G001', 'New WT', '99S1', '99S1', 'G2', 'T04', 'SG 2.1-114', '', '', '2.625 KW', 'Siemens Gamesa', 'ZZ0011', 'SITE_A', '', 'W2001', '', '70000000', 'Latin America', 'DAC', '85.00 m', '', 'IIA', '-28.729056', '-67.158888');
+INSERT INTO Technician (Technician_ID, Name, Surname) VALUES
+(1, 'James', 'Foster'),
+(2, 'Patricia', 'Jimenez'),
+(3, 'David', 'Perry'),
+(4, 'Brooke', 'Jackson'),
+(5, 'Jack', 'Frazier');
 
--- -- Update plant entry
--- UPDATE MaterialData SET Plant = '100S1' WHERE Plant = '99S1';
 
--- -- Delete updated plant entry
--- DELETE FROM MaterialData WHERE Plant = '100S1';
-
--- -- Insert processed Location data
--- INSERT INTO Location (Location_ID, Location_Name) 
--- VALUES 
--- (1, 'Site A');
-
--- -- Insert processed Technician data
--- INSERT INTO Technician (Technician_ID, Name, Surname) 
--- VALUES 
--- (1, 'John', 'Doe');
-
--- -- Insert processed FaultReport data
--- INSERT INTO FaultReport (Report_ID, Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status)
--- VALUES 
--- (1, 1, 1, '2025-02-26', 'Generator failure', 'Pending');
-
--- -- Insert processed Attachment data
--- INSERT INTO Attachment (Attachment_ID, Report_ID, Attachment_Description)
--- VALUES 
--- (1, 1, 'Fault report attachment');
-
--- -- Insert processed TurbineMaintenanceLog data
--- INSERT INTO TurbineMaintenanceLog (Log_ID, TurbineLocation, Maintenance_Date, Fault_Description, Technician_ID, Report_ID)
--- VALUES 
--- (1, 1, '2025-02-26', 'Replaced generator', 1, 1);
-
--- -- Insert processed BatchManagement data
--- INSERT INTO BatchManagement (Batch_ID, Batch_Number) 
--- VALUES 
--- (1, 'Batch_001');
-
--- -- Insert processed SerialNumberProfile data
--- INSERT INTO SerialNumberProfile (Material_ID, Tracking_Number) 
--- VALUES 
--- (50001, 'SN_50001');
-
--- -- Insert processed Material data
--- INSERT INTO Material (Material_ID, Material_Type, Material_Description, Is_Batch_Managed)
--- VALUES 
--- (50001, 'Component', 'Circuit Breaker', 1);
-
--- -- Insert processed Deliveries data
--- INSERT INTO Deliveries (Delivery_ID, Supplier_ID, Delivery_Date, BatchManagement_ID, Delivery_Status, SerialNumberProfile_ID)
--- VALUES 
--- (1, 1001, '2025-02-26', 1, 'Delivered', 50001);
-
--- -- Insert processed ReplacementPart data
--- INSERT INTO ReplacementPart (ReplacementPart_ID, Delivery_ID, Material_ID)
--- VALUES 
--- (1, 1, 50001);
-
--- -- Insert processed SCADA data
--- INSERT INTO SCADA (SCADA_ID, TurbineLocation, Monitor_Date, SCADA_Reading, SCADA_Status, SCADA_Message)
--- VALUES 
--- (1, 1, '2025-02-26', 98.5, 'OK', 'No issues detected');
-
--- -- Insert processed Plant data
--- INSERT INTO Plant (Plant_ID, Plant_Name, Plant_Location, SerialNumberProfile_ID)
--- VALUES 
--- (1, 'Wind Farm A', 'Location X', 50001);
-
--- -- Insert processed DemandForecastingData data
--- INSERT INTO DemandForecastingData (Forecast_ID, TurbineLocation, Forecast_Date, Forecast_Demand)
--- VALUES 
--- (1, 1, '2025-03-01', 3000.0);
-
--- -- Verify table structures
--- PRAGMA table_info(MaterialData);
--- PRAGMA table_info(TurbineData);
--- PRAGMA table_info(TurbineMaintenanceLog);
--- PRAGMA table_info(FaultReport);
--- PRAGMA table_info(Deliveries);
--- PRAGMA table_info(Plant);
-
--- -- End of script
-
--- INSERT INTO TurbineData (FunctionalLoc, TurbineLatitude, TurbineLongitude)
--- VALUES ('TEST01', 55.9429, 9.1257);
-
--- SELECT TurbineLatitude, TurbineLongitude FROM TurbineData WHERE FunctionalLoc = 'TEST01';
-
--- SELECT printf('%.10f', TurbineLatitude), printf('%.10f', TurbineLongitude)
--- FROM TurbineData
--- WHERE FunctionalLoc = 'TEST01';
+-- Update first 15 FaultReport rows with random Technician_IDs from 1 to 5
+WITH RandomTechs AS (
+    SELECT 
+        Report_ID,
+        (ABS(RANDOM()) % 5) + 1 AS RandomTechID
+    FROM FaultReport
+    WHERE Technician_ID IS NULL
+    LIMIT 15
+)
+UPDATE FaultReport
+SET Technician_ID = (
+    SELECT RandomTechID
+    FROM RandomTechs
+    WHERE FaultReport.Report_ID = RandomTechs.Report_ID
+)
+WHERE Report_ID IN (SELECT Report_ID FROM RandomTechs);

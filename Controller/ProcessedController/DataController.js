@@ -106,45 +106,255 @@ export const syncPlantCoordinates = async (req, res) => {
     }
 };
 
-export const syncMaterialNumbers = async (req, res) => {
-  const { materials } = req.body;
+export const syncMaterialData = async (req, res) => {
+    const { materials } = req.body;
 
-  if (!Array.isArray(materials) || materials.length === 0) {
-      return res.status(400).json({ success: false, message: "Invalid materials list" });
-  }
+    if (!Array.isArray(materials)) {
+        return res.status(400).json({ success: false, message: "Invalid materials list" });
+    }
 
-  try {
-      await processedDbInstance.run("BEGIN TRANSACTION");
-      await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
+    try {
+        await processedDbInstance.run("BEGIN TRANSACTION");
+        await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
 
-      for (const code of materials) {
-          const trimmed = code?.trim();
-          if (!trimmed) {
-              console.warn("❌ Skipping invalid material code:", code);
-              continue;
-          }
+        for (const materialCode of materials) {
+            const source = await processedDbInstance.get(
+                `SELECT Material, MaterialCategory, Description, BatchManagementPlant, ViolationReplacementPart, Serial_No_Profile
+                 FROM MaterialData WHERE Material = ? LIMIT 1`,
+                [materialCode]
+            );
 
-          const insertQuery = `
-              INSERT INTO Material (Material_A9B_Number)
-              VALUES (?)
-              ON CONFLICT(Material_A9B_Number) DO NOTHING
-          `;
+            if (!source) {
+                console.warn(`⚠️ Material '${materialCode}' not found in MaterialData`);
+                continue;
+            }
 
-          await processedDbInstance.run(insertQuery, [trimmed]);
-          await Predictions_DataDbInstance.run(insertQuery, [trimmed]);
-      }
+            const isBatchManaged = !!(source.BatchManagementPlant && source.BatchManagementPlant.trim());
 
-      await processedDbInstance.run("COMMIT");
-      await Predictions_DataDbInstance.run("COMMIT");
+            const insertMaterialQuery = `
+                INSERT INTO Material (
+                    Material_A9B_Number,
+                    MaterialCategory,
+                    Material_Description,
+                    Is_Batch_Managed
+                ) VALUES (?, ?, ?, ?)
+                ON CONFLICT(Material_A9B_Number) DO UPDATE SET
+                    MaterialCategory = excluded.MaterialCategory,
+                    Material_Description = excluded.Material_Description,
+                    Is_Batch_Managed = excluded.Is_Batch_Managed
+            `;
 
-      res.status(200).json({ success: true, message: "✅ Synced Material_A9B_Number entries" });
-  } catch (error) {
-      await processedDbInstance.run("ROLLBACK");
-      await Predictions_DataDbInstance.run("ROLLBACK");
+            const values = [
+                source.Material,
+                source.MaterialCategory,
+                source.Description,
+                isBatchManaged ? 1 : 0
+            ];
 
-      console.error("❌ Error syncing material numbers:", error);
-      res.status(500).json({ success: false, message: "Failed to sync materials", error: error.message });
-  }
+            await processedDbInstance.run(insertMaterialQuery, values);
+            await Predictions_DataDbInstance.run(insertMaterialQuery, values);
+
+            // ✅ Insert into ReplacementPart table only if ViolationReplacementPart == 1
+            if (String(source.ViolationReplacementPart).trim() === '1') {
+                const materialRow = await processedDbInstance.get(
+                    'SELECT Material_ID FROM Material WHERE Material_A9B_Number = ?',
+                    [source.Material]
+                );
+
+                if (materialRow) {
+                    await processedDbInstance.run(
+                        `INSERT OR IGNORE INTO ReplacementPart (Material_ID)
+                         VALUES (?)`,
+                        [materialRow.Material_ID]
+                    );
+
+                    await Predictions_DataDbInstance.run(
+                        `INSERT OR IGNORE INTO ReplacementPart (Material_ID)
+                         VALUES (?)`,
+                        [materialRow.Material_ID]
+                    );
+                } else {
+                    console.warn(`⚠️ Material not found in Material table for ReplacementPart: ${source.Material}`);
+                }
+            }
+
+            // ✅ Insert into SerialNumberProfile if Serial_No_Profile exists
+            if (source.Serial_No_Profile && source.Serial_No_Profile.trim()) {
+                const materialRow = await processedDbInstance.get(
+                    'SELECT Material_ID FROM Material WHERE Material_A9B_Number = ?',
+                    [source.Material]
+                );
+
+                if (materialRow) {
+                    const materialId = materialRow.Material_ID;
+                    const insertSerialQuery = `
+                        INSERT INTO SerialNumberProfile (Material_ID, Tracking_Number)
+                        VALUES (?, ?)
+                        ON CONFLICT(Material_ID) DO UPDATE SET
+                            Tracking_Number = excluded.Tracking_Number
+                    `;
+
+                    const trackingNumber = source.Serial_No_Profile.trim();
+
+                    await processedDbInstance.run(insertSerialQuery, [materialId, trackingNumber]);
+                    await Predictions_DataDbInstance.run(insertSerialQuery, [materialId, trackingNumber]);
+                } else {
+                    console.warn(`⚠️ Could not resolve Material_ID for SerialNumberProfile: ${source.Material}`);
+                }
+            }
+        }
+
+        await processedDbInstance.run("COMMIT");
+        await Predictions_DataDbInstance.run("COMMIT");
+
+        res.status(200).json({
+            success: true,
+            message: "✅ Material, ReplacementPart, and SerialNumberProfile tables synced successfully"
+        });
+    } catch (err) {
+        await processedDbInstance.run("ROLLBACK");
+        await Predictions_DataDbInstance.run("ROLLBACK");
+        console.error("❌ Error syncing Material numbers:", err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to sync Material numbers",
+            error: err.message,
+        });
+    }
+};
+
+export const syncTurbineData = async (req, res) => {
+    try {
+        const turbineLocations = await processedDbInstance.all(
+            `SELECT DISTINCT FunctionalLoc FROM TurbineData WHERE FunctionalLoc IS NOT NULL AND TRIM(FunctionalLoc) != ''`
+        );
+
+        if (!turbineLocations || turbineLocations.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No turbine locations found to sync.'
+            });
+        }
+
+        await processedDbInstance.run("BEGIN TRANSACTION");
+        await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
+
+        for (const { FunctionalLoc } of turbineLocations) {
+            // Insert into Location table if not already present
+            const query = `
+                INSERT OR IGNORE INTO Location (Location_Name)
+                VALUES (?)
+            `;
+
+            await processedDbInstance.run(query, [FunctionalLoc]);
+            await Predictions_DataDbInstance.run(query, [FunctionalLoc]);
+        }
+
+        await processedDbInstance.run("COMMIT");
+        await Predictions_DataDbInstance.run("COMMIT");
+
+        res.status(200).json({
+            success: true,
+            message: "✅ Location table synced successfully with FunctionalLoc values"
+        });
+    } catch (err) {
+        await processedDbInstance.run("ROLLBACK");
+        await Predictions_DataDbInstance.run("ROLLBACK");
+
+        console.error("❌ Error syncing turbine locations:", err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to sync turbine locations",
+            error: err.message
+        });
+    }
+};
+
+export const syncFaultReportsController = async (req, res) => {
+    try {
+        await syncFaultReports(processedDbInstance, Predictions_DataDbInstance);
+        res.status(200).json({ success: true, message: '✅ FaultReports synced from ReplacementParts' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+export const syncFaultReports = async (processedDbInstance, Predictions_DataDbInstance) => {
+    const dbs = [
+        { name: 'processedDb', instance: processedDbInstance },
+        { name: 'PredictionsDb', instance: Predictions_DataDbInstance }
+    ];
+
+    for (const { name, instance: db } of dbs) {
+        try {
+            await db.run('BEGIN TRANSACTION');
+            console.log(`🔄 Starting sync from MaterialData for ${name}`);
+
+            const materialsWithB = await db.all(`
+                SELECT md.Material, md.Plant, m.Material_ID
+                FROM MaterialData md
+                JOIN Material m ON m.Material_A9B_Number = md.Material
+                WHERE md.ReplacementPart = 'B'
+            `);
+
+            console.log(`🔍 Found ${materialsWithB.length} MaterialData rows with ReplacementPart = 'B'`);
+
+            for (const row of materialsWithB) {
+                console.log(`🔁 Checking Material ${row.Material} for Plant ${row.Plant}`);
+
+                const turbines = await db.all(`
+                    SELECT FunctionalLoc FROM TurbineData
+                    WHERE MaintPlant = ?
+                `, [row.Plant]);
+
+                console.log(`⚙️ Found ${turbines.length} turbines for Plant ${row.Plant}`);
+
+                for (const turbine of turbines) {
+                    const location = await db.get(`
+                        SELECT Location_ID FROM Location
+                        WHERE Location_Name = ?
+                    `, [turbine.FunctionalLoc]);
+
+                    if (!location) {
+                        console.warn(`⚠️ No Location for FunctionalLoc = ${turbine.FunctionalLoc}`);
+                        continue;
+                    }
+
+                    const exists = await db.get(`
+                        SELECT 1 FROM FaultReport
+                        WHERE TurbineLocation = ? AND Material_ID = ? AND Fault_Type = 'Replacement Part'
+                    `, [location.Location_ID, row.Material_ID]);
+
+                    if (!exists) {
+                        await db.run(`
+                            INSERT INTO FaultReport (
+                                Technician_ID,
+                                TurbineLocation,
+                                Report_Date,
+                                Fault_Type,
+                                Material_ID,
+                                Report_Status,
+                                Updated_Time,
+                                Attachment
+                            ) VALUES (
+                                NULL, ?, DATE('now'), 'Replacement Part', ?, 'Open', CURRENT_TIMESTAMP, NULL
+                            )
+                        `, [location.Location_ID, row.Material_ID]);
+
+                        console.log(`✅ Inserted FaultReport: Turbine ${location.Location_ID}, Material ${row.Material_ID}`);
+                    }
+                }
+            }
+
+            await db.run('COMMIT');
+            console.log(`✅ COMMIT complete for ${name}`);
+        } catch (error) {
+            await db.run('ROLLBACK');
+            console.error(`❌ Error syncing fault reports in ${name}:`, error.message);
+            throw error;
+        }
+    }
 };
 
 
@@ -387,6 +597,50 @@ export const uploadProcessedMaterialData = async (req, res) => {
         });
     }
 };
+
+export const verifyTechnicianLinksController = async (req, res) => {
+    try {
+        const data = await verifyTechnicianLinks(Predictions_DataDbInstance);
+        res.status(200).json({ success: true, data });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Failed to verify links", error: err.message });
+    }
+};
+
+
+export const verifyTechnicianLinks = async (db) => {
+    try {
+        console.log("🔎 Verifying FaultReport ↔ Technician linkage...");
+
+        const results = await db.all(`
+            SELECT
+                fr.Report_ID,
+                fr.Technician_ID,
+                t.Name,
+                t.Surname
+            FROM FaultReport fr
+            LEFT JOIN Technician t ON fr.Technician_ID = t.Technician_ID
+            ORDER BY fr.Report_ID
+        `);
+
+        if (results.length === 0) {
+            console.log("❌ No FaultReports found.");
+        } else {
+            console.table(results.map(r => ({
+                Report_ID: r.Report_ID,
+                Technician_ID: r.Technician_ID,
+                Name: r.Name || 'NULL',
+                Surname: r.Surname || 'NULL'
+            })));
+        }
+
+        return results;
+    } catch (error) {
+        console.error("❌ Error verifying technician links:", error.message);
+        throw error;
+    }
+};
+
 
 export const uploadMaterialPredictionsData = async (req, res) => {
     try {
