@@ -15,7 +15,11 @@ import {
     getProcessedMaterialData,
     getProcessedTurbineData,
     syncPlantCoordinates,
-    syncMaterialNumbers,
+    syncMaterialData,
+    syncTurbineData,
+    syncFaultReports,
+    syncFaultReportsController,
+    verifyTechnicianLinksController,
     getTechnicians,
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
@@ -45,8 +49,11 @@ router.post('/uploadProcessedMaterialData', uploadProcessedMaterialData);
 router.post('/uploadMaterialPredictionsData', uploadMaterialPredictionsData);
 router.post('/uploadTurbinePredictionsData', uploadTurbinePredictionsData);
 router.post('/syncPlantCoordinates', syncPlantCoordinates);
-router.post('/syncMaterialNumbers', syncMaterialNumbers);
-
+router.post('/syncMaterialData', syncMaterialData);
+router.post('/syncTurbineData', syncTurbineData);
+router.post('/syncFaultReports', syncFaultReports);
+router.post('/syncFaultReportsController', syncFaultReportsController);
+router.post('/verifyTechnicianLinks', verifyTechnicianLinksController);
 
 // Common routes
 
