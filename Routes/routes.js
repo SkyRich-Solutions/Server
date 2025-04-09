@@ -25,6 +25,7 @@ import {
 } from '../Controller/ProcessedController/DataController.js';
 import { MaintPlant , PlanningPlant , MainAndPlanningPlant} from '../Controller/ProcessedController/MapsController.js';
 import { ScriptController } from '../Controller/Script/ScriptController.js';
+import { getViolations } from '../Controller/ProcessedController/ViolationController.js';
 
 const router = express.Router();
 
@@ -71,5 +72,9 @@ router.get('/locations', getLocations);
 router.get('/MaintPlant' , MaintPlant);
 router.get('/PlanningPlant' , PlanningPlant);
 router.get('/MainAndPlanningPlant' , MainAndPlanningPlant);
+
+
+// Violation routes
+ router.get('/violations', getViolations);
 
 export default router;
