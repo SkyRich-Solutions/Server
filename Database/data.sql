@@ -1,4 +1,42 @@
+--Unprocessed database
+CREATE TABLE MaterialData (
+    Material TEXT,
+    Plant TEXT,
+    Description TEXT,
+    PlantSpecificMaterialStatus TEXT,
+    BatchManagementPlant TEXT,
+    SerialNoProfile TEXT,
+    ReplacementPart TEXT,
+    UsedInSBom TEXT,
+    MaterialCategory TEXT
+);
 
+CREATE TABLE TurbineData (
+    FunctionalLoc TEXT PRIMARY KEY,
+    Description TEXT,
+    MaintPlant TEXT,  -- Must match MaterialData.Plant
+    PlanningPlant TEXT,
+    Platform TEXT,
+    WTShortName TEXT,
+    TurbineModel TEXT,
+    MkVersion TEXT,
+    Revision TEXT,
+    NominalPower TEXT,
+    OriginalEqManufact TEXT,
+    SBOMForTurbine TEXT,
+    SCADAName TEXT,
+    SCADAParkID TEXT,
+    SCADACode TEXT,
+    SCADAFunctionalLoc TEXT,
+    TechID TEXT UNIQUE,
+    Region TEXT,
+    Technology TEXT,
+    HubHeight TEXT,
+    TowerHeight TEXT,
+    TurbineClass TEXT,
+    TurbineLatitude REAL,
+    TurbineLongitude REAL
+);
 
 -- Insert the data into the Material Table
 

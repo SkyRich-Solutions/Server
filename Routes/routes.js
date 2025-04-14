@@ -25,7 +25,9 @@ import {
     getTechnicians,
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
+import { MaintPlant , PlanningPlant , MainAndPlanningPlant} from '../Controller/ProcessedController/MapsController.js';
 import { ScriptController } from '../Controller/Script/ScriptController.js';
+import { getViolations } from '../Controller/ProcessedController/ViolationController.js';
 
 const router = express.Router();
 
@@ -70,5 +72,14 @@ router.get('/fetch_PredictionsData', getPredictionsData);
 
 router.get('/technicians', getTechnicians);
 router.get('/locations', getLocations);
+
+// Map routes
+router.get('/MaintPlant' , MaintPlant);
+router.get('/PlanningPlant' , PlanningPlant);
+router.get('/MainAndPlanningPlant' , MainAndPlanningPlant);
+
+
+// Violation routes
+ router.get('/violations', getViolations);
 
 export default router;
