@@ -1,4 +1,5 @@
 
+
 -- Insert the data into the Material Table
 
 INSERT INTO MaterialData (Material, Description, Plant, PlantSpecificMaterialStatus, BatchManagementPlant, Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, UnknownPlant)
@@ -18,7 +19,6 @@ VALUES
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HRS3', 'Z7', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'HUS1', 'Z8', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (50001, '2P K6 6A S202 CIRCUIT BREAKER', 'INS5', 'Z4', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-
 
 INSERT INTO TurbineData (
     FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, Revision,
@@ -80,10 +80,17 @@ DROP TABLE IF EXISTS MaintenancePlant;
 DROP TABLE IF EXISTS PlanningPlant;  
 DROP TABLE IF EXISTS ManufacturingPlant;  
 DROP TABLE IF EXISTS PlantMaterialStatus;  
-DROP TABLE IF EXISTS Location;  
+DROP TABLE IF EXISTS Location;
+DROP TABLE IF EXISTS ReplacementPrediction;
+DROP TABLE IF EXISTS ReplacementPredictionGlobal;
+DROP TABLE IF EXISTS MonteCarloDominance;
+DROP TABLE IF EXISTS ReplacementTrends;  
 
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
+
+
+
 
 -- Enable foreign key constraints
 PRAGMA foreign_keys = ON;
@@ -199,7 +206,10 @@ CREATE TABLE Material (
     Material_A9B_Number TEXT UNIQUE,
     MaterialCategory TEXT,
     Material_Description TEXT,
-    Is_Batch_Managed BOOLEAN
+    Is_Batch_Managed BOOLEAN,
+    Future_Replacement_Probability REAL,
+    TotalReplacementCount INTEGER,
+    TotalUsageCount INTEGER
 );
 
 CREATE TABLE Deliveries (
@@ -213,12 +223,16 @@ CREATE TABLE Deliveries (
     FOREIGN KEY (SerialNumberProfile_ID) REFERENCES SerialNumberProfile(Material_ID)
 );
 
-CREATE TABLE ReplacementPart (
-    ReplacementPart_ID INTEGER PRIMARY KEY,
-    Delivery_ID INTEGER,
+CREATE TABLE IF NOT EXISTS ReplacementPart (
+    ReplacementPart_ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Material_ID INTEGER,
-    FOREIGN KEY (Delivery_ID) REFERENCES Deliveries(Delivery_ID),
-    FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID)
+    Plant_ID INTEGER,
+    ReplacementDate DATE,
+    ReplacementReason TEXT DEFAULT 'Replacement Part',
+    Technician_ID INTEGER,
+    FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID),
+    FOREIGN KEY (Plant_ID) REFERENCES Plant(Plant_ID),
+    FOREIGN KEY (Technician_ID) REFERENCES Technician(Technician_ID)
 );
 
 CREATE TABLE SCADA (
@@ -241,6 +255,7 @@ CREATE TABLE IF NOT EXISTS Plant (
     IsPlant BOOLEAN DEFAULT 0,
     IsPlanningPlant BOOLEAN DEFAULT 0,
     IsManufacturingPlant BOOLEAN DEFAULT 0,
+    ReplacementRiskLevel TEXT,
     FOREIGN KEY (SerialNumberProfile_ID) REFERENCES SerialNumberProfile(Material_ID)
 );
 
@@ -250,6 +265,59 @@ CREATE TABLE DemandForecastingData (
     Forecast_Date DATE,
     Forecast_Demand FLOAT,
     FOREIGN KEY (TurbineLocation) REFERENCES Location(Location_ID)
+);
+
+CREATE TABLE ReplacementPrediction (
+    Prediction_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Material_ID INTEGER,
+    Material_Description TEXT,
+    Plant_ID INTEGER DEFAULT -1,
+    MaterialCategory TEXT,
+    Total_Count INTEGER,
+    Count_B INTEGER,
+    BayesianProbability REAL,
+    MonteCarloProbability REAL,
+    MonteCarlo_5thPercentile REAL,
+    MonteCarlo_95thPercentile REAL,
+    MonteCarlo_StdDev REAL,
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID),
+    FOREIGN KEY (Plant_ID) REFERENCES Plant(Plant_ID),
+    UNIQUE(Material_ID, Plant_ID, MaterialCategory)
+);
+
+CREATE TABLE IF NOT EXISTS ReplacementPredictionGlobal (
+    Prediction_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Material_ID INTEGER,
+    Material_Description TEXT,
+    MaterialCategory TEXT,
+    Total_Count INTEGER,
+    Count_B INTEGER,
+    BayesianProbability REAL,
+    MonteCarloProbability REAL,
+    MonteCarlo_5thPercentile REAL,
+    MonteCarlo_95thPercentile REAL,
+    MonteCarlo_StdDev REAL,
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(Material_ID, MaterialCategory)
+);
+
+
+CREATE TABLE IF NOT EXISTS MonteCarloDominance (
+    Dominance_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Description TEXT UNIQUE,
+    DominanceCount INTEGER,
+    Percentage REAL,
+    Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ReplacementTrends (
+    Trend_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Prediction_ID INTEGER,
+    Timestamp TEXT,
+    Description TEXT,
+    Count INTEGER,
+    UNIQUE(Timestamp, Description)
 );
 
 
@@ -277,3 +345,5 @@ SET Technician_ID = (
     WHERE FaultReport.Report_ID = RandomTechs.Report_ID
 )
 WHERE Report_ID IN (SELECT Report_ID FROM RandomTechs);
+
+
