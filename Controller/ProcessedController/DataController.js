@@ -119,7 +119,7 @@ export const syncMaterialData = async (req, res) => {
 
         for (const materialCode of materials) {
             const source = await processedDbInstance.get(
-                `SELECT Material, MaterialCategory, Description, BatchManagementPlant, ViolationReplacementPart, Serial_No_Profile
+                `SELECT Material, MaterialCategory, Description, ViolationReplacementPart, Serial_No_Profile, Plant
                  FROM MaterialData WHERE Material = ? LIMIT 1`,
                 [materialCode]
             );
@@ -129,15 +129,18 @@ export const syncMaterialData = async (req, res) => {
                 continue;
             }
 
-            const isBatchManaged = !!(source.BatchManagementPlant && source.BatchManagementPlant.trim());
+            const violationReplacementPart = source.ViolationReplacementPart === '1';
 
             const insertMaterialQuery = `
                 INSERT INTO Material (
                     Material_A9B_Number,
                     MaterialCategory,
                     Material_Description,
-                    Is_Batch_Managed
-                ) VALUES (?, ?, ?, ?)
+                    Is_Batch_Managed,
+                    Future_Replacement_Probability,
+                    TotalReplacementCount,
+                    TotalUsageCount
+                ) VALUES (?, ?, ?, ?, NULL, 0, 0)
                 ON CONFLICT(Material_A9B_Number) DO UPDATE SET
                     MaterialCategory = excluded.MaterialCategory,
                     Material_Description = excluded.Material_Description,
@@ -148,59 +151,64 @@ export const syncMaterialData = async (req, res) => {
                 source.Material,
                 source.MaterialCategory,
                 source.Description,
-                isBatchManaged ? 1 : 0
+                0
             ];
 
             await processedDbInstance.run(insertMaterialQuery, values);
             await Predictions_DataDbInstance.run(insertMaterialQuery, values);
 
-            // ✅ Insert into ReplacementPart table only if ViolationReplacementPart == 1
-            if (String(source.ViolationReplacementPart).trim() === '1') {
-                const materialRow = await processedDbInstance.get(
-                    'SELECT Material_ID FROM Material WHERE Material_A9B_Number = ?',
-                    [source.Material]
-                );
+            const materialRow = await processedDbInstance.get(
+                'SELECT Material_ID FROM Material WHERE Material_A9B_Number = ?',
+                [source.Material]
+            );
 
-                if (materialRow) {
-                    await processedDbInstance.run(
-                        `INSERT OR IGNORE INTO ReplacementPart (Material_ID)
-                         VALUES (?)`,
-                        [materialRow.Material_ID]
-                    );
-
-                    await Predictions_DataDbInstance.run(
-                        `INSERT OR IGNORE INTO ReplacementPart (Material_ID)
-                         VALUES (?)`,
-                        [materialRow.Material_ID]
-                    );
-                } else {
-                    console.warn(`⚠️ Material not found in Material table for ReplacementPart: ${source.Material}`);
-                }
+            if (!materialRow) {
+                console.warn(`⚠️ Material not found in Material table: ${source.Material}`);
+                continue;
             }
 
-            // ✅ Insert into SerialNumberProfile if Serial_No_Profile exists
-            if (source.Serial_No_Profile && source.Serial_No_Profile.trim()) {
-                const materialRow = await processedDbInstance.get(
-                    'SELECT Material_ID FROM Material WHERE Material_A9B_Number = ?',
-                    [source.Material]
-                );
+            const materialId = materialRow.Material_ID;
 
-                if (materialRow) {
-                    const materialId = materialRow.Material_ID;
-                    const insertSerialQuery = `
-                        INSERT INTO SerialNumberProfile (Material_ID, Tracking_Number)
-                        VALUES (?, ?)
-                        ON CONFLICT(Material_ID) DO UPDATE SET
-                            Tracking_Number = excluded.Tracking_Number
-                    `;
+            if (violationReplacementPart) {
+                const plantName = source.Plant?.trim();
 
-                    const trackingNumber = source.Serial_No_Profile.trim();
-
-                    await processedDbInstance.run(insertSerialQuery, [materialId, trackingNumber]);
-                    await Predictions_DataDbInstance.run(insertSerialQuery, [materialId, trackingNumber]);
-                } else {
-                    console.warn(`⚠️ Could not resolve Material_ID for SerialNumberProfile: ${source.Material}`);
+                if (!plantName) {
+                    console.warn(`⚠️ No Plant specified for Material ${source.Material}`);
+                    continue;
                 }
+
+                const plantRow = await processedDbInstance.get(
+                    `SELECT Plant_ID FROM Plant WHERE Plant_Name = ? COLLATE NOCASE`,
+                    [plantName]
+                );                
+
+                if (!plantRow) {
+                    console.warn(`⚠️ Plant '${plantName}' not found in Plant table for Material '${source.Material}'`);
+                    continue;
+                }
+
+                const plantId = plantRow.Plant_ID;
+
+                const insertReplacementPartQuery = `
+                    INSERT OR IGNORE INTO ReplacementPart (Material_ID, Plant_ID)
+                    VALUES (?, ?)
+                `;
+
+                await processedDbInstance.run(insertReplacementPartQuery, [materialId, plantId]);
+                await Predictions_DataDbInstance.run(insertReplacementPartQuery, [materialId, plantId]);
+
+            }
+
+            if (source.Serial_No_Profile && source.Serial_No_Profile.trim()) {
+                const insertSerialQuery = `
+                    INSERT INTO SerialNumberProfile (Material_ID, Tracking_Number)
+                    VALUES (?, ?)
+                    ON CONFLICT(Material_ID) DO UPDATE SET
+                        Tracking_Number = excluded.Tracking_Number
+                `;
+
+                await processedDbInstance.run(insertSerialQuery, [materialId, source.Serial_No_Profile.trim()]);
+                await Predictions_DataDbInstance.run(insertSerialQuery, [materialId, source.Serial_No_Profile.trim()]);
             }
         }
 
@@ -222,6 +230,7 @@ export const syncMaterialData = async (req, res) => {
         });
     }
 };
+
 
 export const syncTurbineData = async (req, res) => {
     try {
@@ -279,7 +288,6 @@ export const syncFaultReportsController = async (req, res) => {
     }
 };
 
-
 export const syncFaultReports = async (processedDbInstance, Predictions_DataDbInstance) => {
     const dbs = [
         { name: 'processedDb', instance: processedDbInstance },
@@ -289,35 +297,41 @@ export const syncFaultReports = async (processedDbInstance, Predictions_DataDbIn
     for (const { name, instance: db } of dbs) {
         try {
             await db.run('BEGIN TRANSACTION');
-            console.log(`🔄 Starting sync from MaterialData for ${name}`);
 
             const materialsWithB = await db.all(`
-                SELECT md.Material, md.Plant, m.Material_ID
+                SELECT md.Material, md.Plant, md.ReplacementPart, m.Material_ID
                 FROM MaterialData md
                 JOIN Material m ON m.Material_A9B_Number = md.Material
                 WHERE md.ReplacementPart = 'B'
             `);
 
-            console.log(`🔍 Found ${materialsWithB.length} MaterialData rows with ReplacementPart = 'B'`);
-
             for (const row of materialsWithB) {
-                console.log(`🔁 Checking Material ${row.Material} for Plant ${row.Plant}`);
+                if (!row.Material_ID) {
+                    continue;
+                }
 
                 const turbines = await db.all(`
                     SELECT FunctionalLoc FROM TurbineData
                     WHERE MaintPlant = ?
                 `, [row.Plant]);
 
-                console.log(`⚙️ Found ${turbines.length} turbines for Plant ${row.Plant}`);
+                if (turbines.length === 0) {
+                    continue;
+                }
 
                 for (const turbine of turbines) {
+
+                    await db.run(
+                        `INSERT OR IGNORE INTO Location (Location_Name) VALUES (?)`,
+                        [turbine.FunctionalLoc]
+                    );
+
                     const location = await db.get(`
                         SELECT Location_ID FROM Location
                         WHERE Location_Name = ?
                     `, [turbine.FunctionalLoc]);
 
                     if (!location) {
-                        console.warn(`⚠️ No Location for FunctionalLoc = ${turbine.FunctionalLoc}`);
                         continue;
                     }
 
@@ -341,8 +355,6 @@ export const syncFaultReports = async (processedDbInstance, Predictions_DataDbIn
                                 NULL, ?, DATE('now'), 'Replacement Part', ?, 'Open', CURRENT_TIMESTAMP, NULL
                             )
                         `, [location.Location_ID, row.Material_ID]);
-
-                        console.log(`✅ Inserted FaultReport: Turbine ${location.Location_ID}, Material ${row.Material_ID}`);
                     }
                 }
             }
@@ -356,6 +368,279 @@ export const syncFaultReports = async (processedDbInstance, Predictions_DataDbIn
         }
     }
 };
+
+
+export const syncReplacementPredictionsController = async (req, res) => {
+    try {
+        await syncReplacementPredictions(req.body);
+        res.status(200).json({ success: true, message: '✅ Replacement predictions synced successfully' });
+    } catch (err) {
+        console.error("❌ Error in syncReplacementPredictionsController:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+export const syncReplacementPredictions = async (insights) => {
+    const dbs = [
+        { name: 'PredictionsDb', instance: Predictions_DataDbInstance }
+    ];
+
+    for (const { name, instance: db } of dbs) {
+        try {
+            await db.run('BEGIN TRANSACTION');
+
+            // 🌍 Global predictions (overall)
+            if (Array.isArray(insights.overall)) {
+                for (const row of insights.overall) {
+                    const description = row.Description?.trim();
+                    const total = Number(row.Total_Count ?? 0);
+                    const countB = Number(row.Count_B ?? 0);
+                    const bayesProb = Number(row.Probability ?? -1);
+                    const mcMean = Number(row.MonteCarloProbability ?? -1);
+                    const mcStd = Number(row.MonteCarlo_StdDev ?? -1);
+                    const mc5 = Number(row.MonteCarlo_5thPercentile ?? -1);
+                    const mc95 = Number(row.MonteCarlo_95thPercentile ?? -1);
+
+                    if (!description || isNaN(bayesProb)) continue;
+
+                    const material = await db.get(
+                        `SELECT Material_ID, MaterialCategory FROM Material WHERE Material_Description = ?`,
+                        [description]
+                    );
+                    if (!material) continue;
+
+                    await db.run(
+                        `INSERT INTO ReplacementPredictionGlobal (
+                            Material_ID, Material_Description, MaterialCategory,
+                            Total_Count, Count_B,
+                            BayesianProbability, MonteCarloProbability,
+                            MonteCarlo_5thPercentile, MonteCarlo_95thPercentile, MonteCarlo_StdDev
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(Material_ID, MaterialCategory) DO UPDATE SET
+                            Material_Description = excluded.Material_Description,
+                            Total_Count = excluded.Total_Count,
+                            Count_B = excluded.Count_B,
+                            BayesianProbability = excluded.BayesianProbability,
+                            MonteCarloProbability = excluded.MonteCarloProbability,
+                            MonteCarlo_5thPercentile = excluded.MonteCarlo_5thPercentile,
+                            MonteCarlo_95thPercentile = excluded.MonteCarlo_95thPercentile,
+                            MonteCarlo_StdDev = excluded.MonteCarlo_StdDev,
+                            Timestamp = CURRENT_TIMESTAMP`,
+                        [
+                            material.Material_ID,
+                            description,
+                            material.MaterialCategory?.trim() || null,
+                            total,
+                            countB,
+                            bayesProb,
+                            mcMean,
+                            mc5,
+                            mc95,
+                            mcStd
+                        ]
+                    );
+                }
+            }
+
+            // 🏭 Plant-scoped predictions
+            if (Array.isArray(insights.by_plant)) {
+                for (const row of insights.by_plant) {
+                    const description = row.Description?.trim();
+                    const plantName = row.Plant?.trim() || null;
+                    const total = Number(row.Total_Count ?? 0);
+                    const countB = Number(row.Count_B ?? 0);
+                    const bayesProb = Number(row.Probability ?? -1);
+                    const mcMean = Number(row.MonteCarloProbability ?? -1);
+                    const mcStd = Number(row.MonteCarlo_StdDev ?? -1);
+                    const mc5 = Number(row.MonteCarlo_5thPercentile ?? -1);
+                    const mc95 = Number(row.MonteCarlo_95thPercentile ?? -1);
+
+                    if (!description || isNaN(bayesProb)) continue;
+
+                    const material = await db.get(
+                        `SELECT Material_ID, MaterialCategory FROM Material WHERE Material_Description = ?`,
+                        [description]
+                    );
+                    if (!material) continue;
+
+                    const plantRow = plantName
+                        ? await db.get(`SELECT Plant_ID FROM Plant WHERE Plant_Name = ?`, [plantName])
+                        : null;
+
+                    if (!plantRow) continue;
+
+                    await db.run(
+                        `INSERT INTO ReplacementPrediction (
+                            Material_ID, Material_Description, Plant_ID, MaterialCategory,
+                            Total_Count, Count_B,
+                            BayesianProbability, MonteCarloProbability,
+                            MonteCarlo_5thPercentile, MonteCarlo_95thPercentile, MonteCarlo_StdDev
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(Material_ID, Plant_ID, MaterialCategory) DO UPDATE SET
+                            Material_Description = excluded.Material_Description,
+                            Total_Count = excluded.Total_Count,
+                            Count_B = excluded.Count_B,
+                            BayesianProbability = excluded.BayesianProbability,
+                            MonteCarloProbability = excluded.MonteCarloProbability,
+                            MonteCarlo_5thPercentile = excluded.MonteCarlo_5thPercentile,
+                            MonteCarlo_95thPercentile = excluded.MonteCarlo_95thPercentile,
+                            MonteCarlo_StdDev = excluded.MonteCarlo_StdDev,
+                            Timestamp = CURRENT_TIMESTAMP`,
+                        [
+                            material.Material_ID,
+                            description,
+                            plantRow.Plant_ID,
+                            material.MaterialCategory?.trim() || null,
+                            total,
+                            countB,
+                            bayesProb,
+                            mcMean,
+                            mc5,
+                            mc95,
+                            mcStd
+                        ]
+                    );
+                }
+            }
+
+            // 🥊 Monte Carlo dominance
+            const dominance = insights?.monte_carlo_simulation;
+            if (Array.isArray(dominance)) {
+                for (const row of dominance) {
+                    const description = row.Description?.trim();
+                    const count = Number(row.DominanceCount ?? 0);
+                    const percentage = Number(row.Percentage ?? 0);
+                    if (!description) continue;
+
+                    await db.run(
+                        `INSERT INTO MonteCarloDominance (
+                            Description, DominanceCount, Percentage
+                        ) VALUES (?, ?, ?)
+                        ON CONFLICT(Description) DO UPDATE SET
+                            DominanceCount = excluded.DominanceCount,
+                            Percentage = excluded.Percentage,
+                            Timestamp = CURRENT_TIMESTAMP`,
+                        [description, count, percentage]
+                    );
+                }
+            }
+
+            await db.run('COMMIT');
+            console.log(`✅ ReplacementPrediction + ReplacementPredictionGlobal + MonteCarloDominance synced for ${name}`);
+        } catch (error) {
+            await db.run('ROLLBACK');
+            console.error(`❌ Error syncing ReplacementPrediction in ${name}:`, error.message);
+            throw error;
+        }
+    }
+};
+
+
+export const syncMonteCarloDominanceController = async (req, res) => {
+    const { dominance } = req.body;
+
+    if (!Array.isArray(dominance)) {
+        return res.status(400).json({ success: false, message: "Invalid dominance array" });
+    }
+
+    try {
+        await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
+
+        for (const row of dominance) {
+            const description = row.Description?.trim();
+            const count = Number(row.DominanceCount ?? 0);
+            const percentage = Number(row.Percentage ?? 0);
+
+            if (!description) {
+                console.warn(`⚠️ Skipping row with missing Description:`, row);
+                continue;
+            }
+
+            await Predictions_DataDbInstance.run(`
+                INSERT INTO MonteCarloDominance (
+                    Description, DominanceCount, Percentage
+                ) VALUES (?, ?, ?)
+                ON CONFLICT(Description) DO UPDATE SET
+                    DominanceCount = excluded.DominanceCount,
+                    Percentage = excluded.Percentage,
+                    Timestamp = CURRENT_TIMESTAMP
+            `, [description, count, percentage]);
+        }
+
+        await Predictions_DataDbInstance.run("COMMIT");
+        res.status(200).json({ success: true, message: "✅ MonteCarloDominance synced successfully" });
+
+    } catch (err) {
+        await Predictions_DataDbInstance.run("ROLLBACK");
+        console.error("❌ Error syncing MonteCarloDominance:", err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+export const syncReplacementTrendsController = async (req, res) => {
+    const { trends } = req.body;
+
+    if (!Array.isArray(trends)) {
+        console.warn("❌ Invalid trends payload received");
+        return res.status(400).json({ success: false, message: "Invalid trends data" });
+    }
+
+    try {
+        await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
+        console.log(`📊 Syncing ${trends.length} replacement trend rows...`);
+
+        // 🔍 DEBUG: Check if ReplacementPrediction has valid entries
+        const sample = await Predictions_DataDbInstance.all(`SELECT * FROM ReplacementPrediction LIMIT 5`);
+        console.log("📄 Sample predictions:", sample);
+
+        for (const trend of trends) {
+            const { Timestamp, Description, Count } = trend;
+
+            if (!Timestamp || !Description || typeof Count !== "number") {
+                console.warn(`⚠️ Skipping invalid trend entry:`, trend);
+                continue;
+            }
+
+            console.log(`🔍 Looking up Prediction_ID for '${Description}'...`);
+
+            const prediction = await Predictions_DataDbInstance.get(
+                `SELECT Prediction_ID FROM ReplacementPrediction
+                 WHERE Material_Description = ? ORDER BY Timestamp DESC LIMIT 1`,
+                [Description]
+            );
+
+            const predictionId = prediction?.Prediction_ID || null;
+
+            if (!predictionId) {
+                console.warn(`⚠️ No ReplacementPrediction found for '${Description}'`);
+            } else {
+                console.log(`✅ Found Prediction_ID ${predictionId} for '${Description}'`);
+            }
+
+            await Predictions_DataDbInstance.run(
+                `INSERT INTO ReplacementTrends (
+                    Timestamp, Description, Count, Prediction_ID
+                ) VALUES (?, ?, ?, ?)
+                ON CONFLICT(Timestamp, Description) DO UPDATE SET
+                    Count = excluded.Count,
+                    Prediction_ID = excluded.Prediction_ID`,
+                [Timestamp, Description, Count, predictionId]
+            );
+
+            console.log(`📌 Inserted/Updated trend: ${Timestamp}, ${Description}, Count: ${Count}, Prediction_ID: ${predictionId}`);
+        }
+
+        await Predictions_DataDbInstance.run("COMMIT");
+        console.log("✅ Replacement trends sync committed.");
+        res.status(200).json({ success: true, message: "📈 Replacement trends synced successfully." });
+    } catch (err) {
+        await Predictions_DataDbInstance.run("ROLLBACK");
+        console.error("❌ Error syncing trends:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+
 
 
 export const uploadProcessedTurbineData = async (req, res) => {
@@ -528,67 +813,68 @@ export const uploadProcessedMaterialData = async (req, res) => {
         }
 
         await processedDbInstance.run('BEGIN TRANSACTION');
+        await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
         for (const record of cleanedData) {
-            // Check if the record already exists
-            const existing = await processedDbInstance.get(
-                `SELECT 1 FROM MaterialData WHERE Material = ? AND Plant = ?`,
-                [record.Material, record.Plant]
-            );
+            const values = [
+                record.Description,
+                record.PlantSpecificMaterialStatus,
+                record.BatchManagementPlant,
+                record.Serial_No_Profile,
+                record.ReplacementPart,
+                record.UsedInSBom,
+                record.ViolationReplacementPart,
+                record.MaterialCategory,
+                record.UnknownPlant,
+                record.Material,
+                record.Plant
+            ];
 
-            if (existing) {
-                // If exists, update only the necessary fields
-                await processedDbInstance.run(
-                    `UPDATE MaterialData 
-                     SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
-                         Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, MaterialCategory = ?, UnknownPlant = ?
-                     WHERE Material = ? AND Plant = ?`,
-                    [
-                        record.Description,
-                        record.PlantSpecificMaterialStatus,
-                        record.BatchManagementPlant,
-                        record.Serial_No_Profile,
-                        record.ReplacementPart,
-                        record.UsedInSBom,
-                        record.ViolationReplacementPart,
-                        record.MaterialCategory,
-                        record.UnknownPlant,
-                        record.Material,
-                        record.Plant
-                    ]
+            const insertValues = [
+                record.Material,
+                record.Plant,
+                ...values.slice(0, 9)
+            ];
+
+            const updateQuery = `
+                UPDATE MaterialData 
+                SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
+                    Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
+                    MaterialCategory = ?, UnknownPlant = ?
+                WHERE Material = ? AND Plant = ?
+            `;
+
+            const insertQuery = `
+                INSERT INTO MaterialData 
+                (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
+                 Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, UnknownPlant)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
+
+            for (const db of [processedDbInstance, Predictions_DataDbInstance]) {
+                const existing = await db.get(
+                    `SELECT 1 FROM MaterialData WHERE Material = ? AND Plant = ?`,
+                    [record.Material, record.Plant]
                 );
-            } else {
-                // If not exists, insert new record
-                await processedDbInstance.run(
-                    `INSERT INTO MaterialData 
-                    (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
-                    Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, UnknownPlant)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        record.Material,
-                        record.Plant,
-                        record.Description,
-                        record.PlantSpecificMaterialStatus,
-                        record.BatchManagementPlant,
-                        record.Serial_No_Profile,
-                        record.ReplacementPart,
-                        record.UsedInSBom,
-                        record.ViolationReplacementPart,
-                        record.MaterialCategory,
-                        record.UnknownPlant
-                    ]
-                );
+
+                if (existing) {
+                    await db.run(updateQuery, values);
+                } else {
+                    await db.run(insertQuery, insertValues);
+                }
             }
         }
 
         await processedDbInstance.run('COMMIT');
+        await Predictions_DataDbInstance.run('COMMIT');
 
         res.status(201).json({
             success: true,
-            message: 'Cleaned MaterialData successfully persisted'
+            message: 'Cleaned MaterialData successfully persisted to both databases'
         });
     } catch (error) {
         await processedDbInstance.run('ROLLBACK');
+        await Predictions_DataDbInstance.run('ROLLBACK');
         console.error('Error saving cleaned data:', error);
         res.status(500).json({
             success: false,
@@ -597,6 +883,7 @@ export const uploadProcessedMaterialData = async (req, res) => {
         });
     }
 };
+
 
 export const verifyTechnicianLinksController = async (req, res) => {
     try {
@@ -640,7 +927,6 @@ export const verifyTechnicianLinks = async (db) => {
         throw error;
     }
 };
-
 
 export const uploadMaterialPredictionsData = async (req, res) => {
     try {
