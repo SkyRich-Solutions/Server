@@ -13,8 +13,6 @@ import {
     getTechnicians,
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
-<<<<<<< HEAD
-
 // Fault Report imports
 import {syncFaultReportsController,verifyTechnicianLinksController } from '../Controller/ProcessedController/SyncFaultReportsController.js';
 
@@ -36,11 +34,9 @@ import { uploadProcessedTurbineData, uploadProcessedMaterialData } from '../Cont
 import { uploadTurbinePredictionsData, uploadMaterialPredictionsData } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
 
 
-=======
-import { MaintPlant , PlanningPlant , MainAndPlanningPlant} from '../Controller/ProcessedController/MapsController.js';
->>>>>>> b17a5b717f4084e0562b170a384faf665caf6b5c
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 import { getViolations } from '../Controller/ProcessedController/ViolationController.js';
+import { MaintPlant , PlanningPlant , MainAndPlanningPlant} from '../Controller/ProcessedController/MapsController.js';
 
 const router = express.Router();
 
