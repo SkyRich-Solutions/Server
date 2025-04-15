@@ -8,23 +8,33 @@ import {
 } from '../Controller/UploadController.js';
 import {
     getPredictionsData,
-    uploadProcessedMaterialData,
-    uploadProcessedTurbineData,
-    uploadMaterialPredictionsData,
-    uploadTurbinePredictionsData,
     getProcessedMaterialData,
     getProcessedTurbineData,
-    syncPlantCoordinates,
-    syncMaterialData,
-    syncTurbineData,
-    syncFaultReportsController,
-    verifyTechnicianLinksController,
-    syncReplacementPredictionsController,
-    syncMonteCarloDominanceController,
-    syncReplacementTrendsController,
     getTechnicians,
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
+
+// Fault Report imports
+import {syncFaultReportsController,verifyTechnicianLinksController } from '../Controller/ProcessedController/SyncFaultReportsController.js';
+
+//  Material imports
+import { syncMaterialData } from '../Controller/ProcessedController/SyncMaterialDataController.js';
+import { syncReplacementPredictionsController, syncMonteCarloDominanceController, syncReplacementTrendsController } from '../Controller/ProcessedController/SyncMaterialPredictionsController.js';
+
+//  Turbine imports
+import { syncTurbineData } from '../Controller/ProcessedController/SyncTurbineDataController.js';
+
+//  Plant imports
+
+import { syncPlantCoordinates } from '../Controller/ProcessedController/SyncPlantDataController.js';
+
+// Upload Processed Data imports
+import { uploadProcessedTurbineData, uploadProcessedMaterialData } from '../Controller/ProcessedController/UploadProcessedDataController.js';
+
+// Upload Predictions Data imports
+import { uploadTurbinePredictionsData, uploadMaterialPredictionsData } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
+
+
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 
 const router = express.Router();
