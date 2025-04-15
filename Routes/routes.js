@@ -8,24 +8,37 @@ import {
 } from '../Controller/UploadController.js';
 import {
     getPredictionsData,
-    uploadProcessedMaterialData,
-    uploadProcessedTurbineData,
-    uploadMaterialPredictionsData,
-    uploadTurbinePredictionsData,
     getProcessedMaterialData,
     getProcessedTurbineData,
-    syncPlantCoordinates,
-    syncMaterialData,
-    syncTurbineData,
-    syncFaultReportsController,
-    verifyTechnicianLinksController,
-    syncReplacementPredictionsController,
-    syncMonteCarloDominanceController,
-    syncReplacementTrendsController,
     getTechnicians,
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
+<<<<<<< HEAD
+
+// Fault Report imports
+import {syncFaultReportsController,verifyTechnicianLinksController } from '../Controller/ProcessedController/SyncFaultReportsController.js';
+
+//  Material imports
+import { syncMaterialData } from '../Controller/ProcessedController/SyncMaterialDataController.js';
+import { syncReplacementPredictionsController, syncMonteCarloDominanceController, syncReplacementTrendsController } from '../Controller/ProcessedController/SyncMaterialPredictionsController.js';
+
+//  Turbine imports
+import { syncTurbineData } from '../Controller/ProcessedController/SyncTurbineDataController.js';
+
+//  Plant imports
+
+import { syncPlantCoordinates } from '../Controller/ProcessedController/SyncPlantDataController.js';
+
+// Upload Processed Data imports
+import { uploadProcessedTurbineData, uploadProcessedMaterialData } from '../Controller/ProcessedController/UploadProcessedDataController.js';
+
+// Upload Predictions Data imports
+import { uploadTurbinePredictionsData, uploadMaterialPredictionsData } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
+
+
+=======
 import { MaintPlant , PlanningPlant , MainAndPlanningPlant} from '../Controller/ProcessedController/MapsController.js';
+>>>>>>> b17a5b717f4084e0562b170a384faf665caf6b5c
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 import { getViolations } from '../Controller/ProcessedController/ViolationController.js';
 
