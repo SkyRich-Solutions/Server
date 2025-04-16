@@ -1,5 +1,4 @@
 
-
 -- Predictions Database ---------------------------------------------
 
 -- Drop tables if they exist  
@@ -286,10 +285,7 @@ CREATE TABLE IF NOT EXISTS MaterialData (
     ViolationReplacementPart TEXT,
     MaterialCategory TEXT,
     UnknownPlant TEXT,
-    PRIMARY KEY (Material, Plant),
-    FOREIGN KEY (Plant) REFERENCES Plant(Plant_Code)
-        ON UPDATE CASCADE 
-        ON DELETE SET NULL
+    PRIMARY KEY (Material, Plant)
 );
 
 CREATE TABLE IF NOT EXISTS TurbineData (
@@ -318,13 +314,7 @@ CREATE TABLE IF NOT EXISTS TurbineData (
     TurbineLatitude REAL,
     TurbineLongitude REAL,
     UnknownMaintPlant TEXT,
-    UnknownPlanningPlant TEXT,
-    FOREIGN KEY (MaintPlant) REFERENCES Plant(Plant_Code)
-        ON UPDATE CASCADE 
-        ON DELETE SET NULL,
-    FOREIGN KEY (PlanningPlant) REFERENCES Plant(Plant_Code)
-        ON UPDATE CASCADE 
-        ON DELETE SET NULL
+    UnknownPlanningPlant TEXT
 );
 ------------------------------------------------------------------
 
