@@ -25,7 +25,7 @@ import { syncTurbineData } from '../Controller/ProcessedController/SyncTurbineDa
 
 //  Plant imports
 
-import { syncPlantCoordinates } from '../Controller/ProcessedController/SyncPlantDataController.js';
+import { syncPlantCoordinates, syncPlantData } from '../Controller/ProcessedController/SyncPlantDataController.js';
 
 // Upload Processed Data imports
 import { uploadProcessedTurbineData, uploadProcessedMaterialData } from '../Controller/ProcessedController/UploadProcessedDataController.js';
@@ -85,7 +85,8 @@ router.get('/locations', getLocations);
 // Map routes
 router.get('/MaintPlant' , MaintPlant);
 router.get('/PlanningPlant' , PlanningPlant);
-router.get('/MainAndPlanningPlant' , MainAndPlanningPlant);
+router.get('/MainAndPlanningPlant', MainAndPlanningPlant);
+router.get('/getPlantData', syncPlantData);
 
 
 // Violation routes
