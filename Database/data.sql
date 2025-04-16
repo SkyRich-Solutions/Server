@@ -1,5 +1,5 @@
 
--- Prediction Database ---------------------------------------------
+-- Predictions Database ---------------------------------------------
 
 -- Drop tables if they exist  
 DROP TABLE IF EXISTS TurbineMaintenanceLog;  
