@@ -14,24 +14,41 @@ import {
     getLocations
 } from '../Controller/ProcessedController/DataController.js';
 // Fault Report imports
-import {syncFaultReportsController,verifyTechnicianLinksController } from '../Controller/ProcessedController/SyncFaultReportsController.js';
+import {
+    syncFaultReportsController,
+    verifyTechnicianLinksController
+} from '../Controller/ProcessedController/SyncFaultReportsController.js';
 
 //  Material imports
 import { syncMaterialData } from '../Controller/ProcessedController/SyncMaterialDataController.js';
-import { syncReplacementPredictionsController, syncMonteCarloDominanceController, syncReplacementTrendsController } from '../Controller/ProcessedController/SyncMaterialPredictionsController.js';
+import {
+    syncReplacementPredictionsController,
+    syncMonteCarloDominanceController,
+    syncReplacementTrendsController
+} from '../Controller/ProcessedController/SyncMaterialPredictionsController.js';
 
 //  Turbine imports
 import { syncTurbineData } from '../Controller/ProcessedController/SyncTurbineDataController.js';
 
 //  Plant imports
 
-import { syncPlantCoordinates, syncPlantData } from '../Controller/ProcessedController/SyncPlantDataController.js';
+import {
+    syncPlantCoordinates,
+    syncPlantData
+} from '../Controller/ProcessedController/SyncPlantDataController.js';
 
 // Upload Processed Data imports
-import { uploadProcessedTurbineData, uploadProcessedMaterialData, fetchReplacementParts, fetchPlantTable, fetchMaterialTable } from '../Controller/ProcessedController/UploadProcessedDataController.js';
+import {
+    uploadProcessedTurbineData,
+    uploadProcessedMaterialData,
+    fetchReplacementParts,
+    fetchPlantTable,
+    fetchMaterialTable
+} from '../Controller/ProcessedController/UploadProcessedDataController.js';
 
 // Upload Predictions Data imports
 import { uploadTurbinePredictionsData, uploadMaterialPredictionsData, fetchReplacementPrediction } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
+
 
 // Upload Catecory Predictions Data imports
 import { syncMaterialCategoryPredictionsController } from '../Controller/ProcessedController/SyncMaterialCategoryPredictions.js';
@@ -45,6 +62,7 @@ import { syncMaterialCategoryHealthScores } from '../Controller/ProcessedControl
 //Uplodad Material Maintenance Forecasts imports
 import { syncMaterialMaintenanceForecasts } from '../Controller/ProcessedController/SyncMaterialMaintenanceForecasts.js';
 
+
 // Upload Material Component Health Score imports
 import { syncMaterialComponentHealthScores } from '../Controller/ProcessedController/SyncMaterialComponentHealthScores.js';
 
@@ -54,10 +72,31 @@ import { syncTurbineModelHealthScores } from '../Controller/ProcessedController/
 //Upload Turbine Platform Health Score imports
 import { syncTurbinePlatformHealthScores } from '../Controller/ProcessedController/SyncTurbinePlatformHealthScores.js';
 
-
 import { ScriptController } from '../Controller/Script/ScriptController.js';
-import { getTurbineViolation, getViolations, getViolations0 , getTurbineViolation0, getMaterialClassified, getMaterialUnclassified, getMaterialUnknownPlant, getMaterialKnownPlant } from '../Controller/ProcessedController/ViolationController.js';
-import { MaintPlant , PlanningPlant , MainAndPlanningPlant, WarehousePlanningPlant, WarehouseManufacturingPlant, WarehousePlant} from '../Controller/ProcessedController/MapsController.js';
+
+import {
+    MaintPlant,
+    PlanningPlant,
+    MainAndPlanningPlant,
+    WarehousePlanningPlant,
+    WarehouseManufacturingPlant,
+    WarehousePlant
+} from '../Controller/ProcessedController/MapsController.js';
+
+import {
+    getMaterialReplacementPartsViolations,
+    getMaterialClassified,
+    getMaterialCompliantReplacementParts,
+    getMaterialKnownPlant,
+    getMaterialUnclassified,
+    getMaterialUnknownPlant,
+    getTurbineKnownMaintPlant,
+    getTurbineUnknownMaintPlantViolation,
+    getTurbineKnownPlanningPlant,
+    getTurbineUnknownPlanningPlantViolation,
+    getTurbineUnknownLocation,
+    getTurbineKnownLocation
+} from '../Controller/ProcessedController/ViolationController.js';
 
 const router = express.Router();
 
@@ -87,7 +126,10 @@ router.post('/syncMaterialData', syncMaterialData);
 router.post('/syncTurbineData', syncTurbineData);
 router.post('/syncFaultReportsController', syncFaultReportsController);
 router.post('/verifyTechnicianLinks', verifyTechnicianLinksController);
-router.post("/syncReplacementPredictions", syncReplacementPredictionsController);
+router.post(
+    '/syncReplacementPredictions',
+    syncReplacementPredictionsController
+);
 router.post('/syncMonteCarloDominance', syncMonteCarloDominanceController);
 router.post('/syncReplacementTrends', syncReplacementTrendsController);
 router.post('/syncMaterialCategoryPredictions', syncMaterialCategoryPredictionsController);
@@ -114,8 +156,8 @@ router.get('/technicians', getTechnicians);
 router.get('/locations', getLocations);
 
 // Map routes
-router.get('/MaintPlant' , MaintPlant);
-router.get('/PlanningPlant' , PlanningPlant);
+router.get('/MaintPlant', MaintPlant);
+router.get('/PlanningPlant', PlanningPlant);
 router.get('/MainAndPlanningPlant', MainAndPlanningPlant);
 router.get('/getPlantData', syncPlantData);
 router.get('/getWarehousePlanningPlant', WarehousePlanningPlant);
@@ -123,13 +165,40 @@ router.get('/getWarehouseManufacturingPlant', WarehouseManufacturingPlant);
 router.get('/getWarehosuePlant', WarehousePlant);
 
 // Violation routes
- router.get('/violations', getViolations);
- router.get('/getViolation0' , getViolations0);
- router.get('/getTurbineViolation', getTurbineViolation);
- router.get('/getTurbineViolation0', getTurbineViolation0);   
- router.get('/getMaterialClassifiedPlant', getMaterialClassified);
- router.get('/getMaterialUnclassifiedPlant', getMaterialUnclassified);
- router.get('/getMaterialUnknownPlant',getMaterialUnknownPlant);
- router.get('/getMaterialKnownPlant', getMaterialKnownPlant);
+// Material
+router.get(
+    '/getMaterialReplacementPartsViolations',
+    getMaterialReplacementPartsViolations
+);
+//
+router.get(
+    '/getMaterialCompliantReplacementParts',
+    getMaterialCompliantReplacementParts
+);
+//
+router.get('/getMaterialUnclassified', getMaterialUnclassified);
+//
+router.get('/getMaterialClassified', getMaterialClassified);
+//
+router.get('/getMaterialUnknownPlant', getMaterialUnknownPlant);
+//
+router.get('/getMaterialKnownPlant', getMaterialKnownPlant);
+//
+//Turbine
+router.get(
+    '/getTurbineUnknownPlanningPlantViolation',
+    getTurbineUnknownPlanningPlantViolation
+);
+//
+router.get(
+    '/getTurbineUnknownMaintPlantViolation',
+    getTurbineUnknownMaintPlantViolation
+);
+//
+router.get('/getTurbineKnownMaintPlant', getTurbineKnownMaintPlant);
+
+router.get('/getTurbineKnownPlanningPlant', getTurbineKnownPlanningPlant);
+router.get('/getTurbineUnknownLocation', getTurbineUnknownLocation);
+router.get('/getTurbineKnownLocation', getTurbineKnownLocation);
 
 export default router;
