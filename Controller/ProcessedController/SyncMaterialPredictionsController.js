@@ -1,6 +1,4 @@
 import {
-    unprocessedDbInstance,
-    processedDbInstance,
     Predictions_DataDbInstance
 } from '../../Database/Database.js';
 
@@ -23,7 +21,7 @@ export const syncReplacementPredictions = async (insights) => {
         try {
             await db.run('BEGIN TRANSACTION');
 
-            //  Global predictions (overall)
+            // ➤ 1. Global predictions (overall)
             if (Array.isArray(insights.overall)) {
                 for (const row of insights.overall) {
                     const description = row.Description?.trim();
@@ -74,9 +72,35 @@ export const syncReplacementPredictions = async (insights) => {
                         ]
                     );
                 }
+
+                // ➤ 1b. Patch Material table with global prediction data
+                await db.run(`
+                    UPDATE Material
+                    SET
+                        TotalReplacementCount = (
+                            SELECT Count_B
+                            FROM ReplacementPredictionGlobal
+                            WHERE ReplacementPredictionGlobal.Material_ID = Material.Material_ID
+                        ),
+                        Future_Replacement_Probability = (
+                            SELECT BayesianProbability
+                            FROM ReplacementPredictionGlobal
+                            WHERE ReplacementPredictionGlobal.Material_ID = Material.Material_ID
+                        ),
+                        TotalUsageCount = (
+                            SELECT Total_Count
+                            FROM ReplacementPredictionGlobal
+                            WHERE ReplacementPredictionGlobal.Material_ID = Material.Material_ID
+                        )
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM ReplacementPredictionGlobal
+                        WHERE ReplacementPredictionGlobal.Material_ID = Material.Material_ID
+                    )
+                `);
             }
 
-            //  Plant-scoped predictions
+            // ➤ 2. Plant-scoped predictions
             if (Array.isArray(insights.by_plant)) {
                 for (const row of insights.by_plant) {
                     const description = row.Description?.trim();
@@ -137,7 +161,7 @@ export const syncReplacementPredictions = async (insights) => {
                 }
             }
 
-            //  Monte Carlo dominance
+            // ➤ 3. Monte Carlo dominance
             const dominance = insights?.monte_carlo_simulation;
             if (Array.isArray(dominance)) {
                 for (const row of dominance) {
@@ -167,6 +191,7 @@ export const syncReplacementPredictions = async (insights) => {
         }
     }
 };
+
 
 
 export const syncMonteCarloDominanceController = async (req, res) => {
