@@ -31,7 +31,7 @@ import { syncPlantCoordinates, syncPlantData } from '../Controller/ProcessedCont
 import { uploadProcessedTurbineData, uploadProcessedMaterialData, fetchReplacementParts, fetchPlantTable, fetchMaterialTable } from '../Controller/ProcessedController/UploadProcessedDataController.js';
 
 // Upload Predictions Data imports
-import { uploadTurbinePredictionsData, uploadMaterialPredictionsData } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
+import { uploadTurbinePredictionsData, uploadMaterialPredictionsData, fetchReplacementPrediction } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
 
 // Upload Catecory Predictions Data imports
 import { syncMaterialCategoryPredictionsController } from '../Controller/ProcessedController/SyncMaterialCategoryPredictions.js';
@@ -44,6 +44,15 @@ import { syncMaterialCategoryHealthScores } from '../Controller/ProcessedControl
 
 //Uplodad Material Maintenance Forecasts imports
 import { syncMaterialMaintenanceForecasts } from '../Controller/ProcessedController/SyncMaterialMaintenanceForecasts.js';
+
+// Upload Material Component Health Score imports
+import { syncMaterialComponentHealthScores } from '../Controller/ProcessedController/SyncMaterialComponentHealthScores.js';
+
+//Upload Turbine Model Health Score imports
+import { syncTurbineModelHealthScores } from '../Controller/ProcessedController/SyncTurbineModelHealthScores.js';
+
+//Upload Turbine Platform Health Score imports
+import { syncTurbinePlatformHealthScores } from '../Controller/ProcessedController/SyncTurbinePlatformHealthScores.js';
 
 
 import { ScriptController } from '../Controller/Script/ScriptController.js';
@@ -85,6 +94,9 @@ router.post('/syncMaterialCategoryPredictions', syncMaterialCategoryPredictionsC
 router.post("/syncPlantSpecificMaterialStatusTransitions", syncPlantSpecificMaterialStatusTransitions);
 router.post("/syncMaterialCategoryHealthScores", syncMaterialCategoryHealthScores);
 router.post("/syncMaterialMaintenanceForecasts", syncMaterialMaintenanceForecasts);
+router.post('/syncMaterialComponentHealthScores', syncMaterialComponentHealthScores);
+router.post('/syncTurbineModelHealthScores', syncTurbineModelHealthScores);
+router.post("/syncTurbinePlatformHealthScores", syncTurbinePlatformHealthScores);
 
 // Common routes
 
@@ -96,6 +108,7 @@ router.get('/fetch_PredictionsData', getPredictionsData);
 router.get('/fetchReplacementParts', fetchReplacementParts);
 router.get("/fetchPlantTable", fetchPlantTable);
 router.get("/fetchMaterialTable", fetchMaterialTable);
+router.get("/fetchReplacementPrediction", fetchReplacementPrediction);
 
 router.get('/technicians', getTechnicians);
 router.get('/locations', getLocations);
