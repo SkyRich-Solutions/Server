@@ -13,7 +13,7 @@ const InitializeDatabases = async () => {
     try {
         if (!unprocessedDbInstance) {
             unprocessedDbInstance = await open({
-                filename: process.env.UNPROCESSED_DATABASE_PATH, // Path to UnProcessed Data.db
+                filename: process.env.UNPROCESSED_DATABASE_PATH,
                 driver: sqlite3.Database,
             });
             console.log('✅ UnProcessed Database Connected!');
@@ -21,7 +21,7 @@ const InitializeDatabases = async () => {
 
         if (!processedDbInstance) {
             processedDbInstance = await open({
-                filename: process.env.PROCESSED_DATABASE_PATH, // Path to Processed Data.db
+                filename: process.env.PROCESSED_DATABASE_PATH,
                 driver: sqlite3.Database,
             });
             console.log('✅ Processed Database Connected!');
@@ -29,7 +29,7 @@ const InitializeDatabases = async () => {
 
         if (!Predictions_DataDbInstance) {
             Predictions_DataDbInstance = await open({
-                filename: process.env.Predictions_DATABASE_PATH, // Path to Processed Data.db
+                filename: process.env.Predictions_DATABASE_PATH,
                 driver: sqlite3.Database,
             });
             console.log('✅ Predictions Database Connected!');

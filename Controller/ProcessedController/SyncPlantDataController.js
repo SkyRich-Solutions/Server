@@ -18,6 +18,11 @@ try {
     geoMapping = {};
 }
 
+// ✅ Allow Jest to inject a mock mapping for testing
+export const __setGeoMapping = (mapping) => {
+    geoMapping = mapping;
+};
+
 export const syncPlantCoordinates = async (req, res) => {
     const { plants } = req.body;
 

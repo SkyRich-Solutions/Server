@@ -1,6 +1,4 @@
 import {
-    unprocessedDbInstance,
-    processedDbInstance,
     Predictions_DataDbInstance
 } from '../../Database/Database.js';
 
