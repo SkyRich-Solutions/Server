@@ -201,3 +201,13 @@ export const uploadTurbinePredictionsData = async (req, res) => {
         });
     }
 };
+
+export const fetchReplacementPrediction = async (req, res) => {
+    try {
+        const rows = await Predictions_DataDbInstance.all(`SELECT * FROM ReplacementPrediction`);
+        res.status(200).json({ data: rows });
+    } catch (err) {
+        console.error("Error fetching ReplacementPrediction:", err);
+        res.status(500).json({ error: err.message });
+    }
+};

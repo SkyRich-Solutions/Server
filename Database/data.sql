@@ -30,6 +30,8 @@ DROP TABLE IF EXISTS MaterialStatusTransitions;
 DROP TABLE IF EXISTS MaterialCategoryHealthScores;
 DROP TABLE IF EXISTS MaterialCategoryScoreSummary;
 DROP TABLE IF EXISTS MaintenanceForecasts;
+DROP TABLE IF EXISTS MaterialComponentHealthScore;
+DROP TABLE IF EXISTS MaterialComponentScoreSummary;
 
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
@@ -311,6 +313,51 @@ CREATE TABLE IF NOT EXISTS MaintenanceForecasts (
     UNIQUE(Material_ID, Plant_ID),
     FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID),
     FOREIGN KEY (Plant_ID) REFERENCES Plant(Plant_ID)
+);
+
+CREATE TABLE IF NOT EXISTS MaterialComponentHealthScore (
+    ComponentHealthScore_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Material_ID TEXT NOT NULL,
+    Plant TEXT NOT NULL,
+    HealthScore REAL NOT NULL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(Material_ID, Plant)
+);
+
+CREATE TABLE IF NOT EXISTS MaterialComponentScoreSummary (
+    Material_ID TEXT PRIMARY KEY,
+    TotalComponentScore REAL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS TurbineModelHealthScore (
+    ModelHealthScore_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    TurbineModel TEXT NOT NULL,
+    Plant TEXT NOT NULL,
+    HealthScore REAL NOT NULL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(TurbineModel, Plant)
+);
+
+CREATE TABLE IF NOT EXISTS TurbineModelScoreSummary (
+    TurbineModel TEXT PRIMARY KEY,
+    TotalModelScore REAL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS TurbinePlatformHealthScore (
+    PlatformHealthScore_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Platform TEXT NOT NULL,
+    Plant TEXT NOT NULL,
+    HealthScore REAL NOT NULL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(Platform, Plant)
+);
+
+CREATE TABLE IF NOT EXISTS TurbinePlatformScoreSummary (
+    Platform TEXT PRIMARY KEY,
+    TotalPlatformScore REAL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 ------------------------------------------------------------------
