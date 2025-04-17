@@ -1,4 +1,3 @@
-
 import {
     unprocessedDbInstance,
     processedDbInstance,
@@ -12,23 +11,26 @@ export const syncMaterialData = async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid materials list" });
     }
 
+    let transactionStarted = false;
+
     try {
         await Predictions_DataDbInstance.run("BEGIN TRANSACTION");
+        transactionStarted = true;
 
         for (const materialCode of materials) {
-            const source = await Predictions_DataDbInstance.get(
+            const materialRows = await Predictions_DataDbInstance.all(
                 `SELECT Material, MaterialCategory, Description, ViolationReplacementPart, Serial_No_Profile, Plant
-                 FROM MaterialData WHERE Material = ? LIMIT 1`,
+                 FROM MaterialData
+                 WHERE Material = ?`,
                 [materialCode]
             );
 
-            if (!source) {
-                console.warn(` Material '${materialCode}' not found in MaterialData`);
+            if (!materialRows || materialRows.length === 0) {
+                console.warn(`Material '${materialCode}' not found in MaterialData`);
                 continue;
             }
 
-            const violationReplacementPart = source.ViolationReplacementPart === '1';
-
+            const firstRow = materialRows[0]; // all rows share MaterialCategory, Description
             const insertMaterialQuery = `
                 INSERT INTO Material (
                     Material_A9B_Number,
@@ -46,9 +48,9 @@ export const syncMaterialData = async (req, res) => {
             `;
 
             const values = [
-                source.Material,
-                source.MaterialCategory,
-                source.Description,
+                firstRow.Material,
+                firstRow.MaterialCategory,
+                firstRow.Description,
                 0
             ];
 
@@ -56,53 +58,64 @@ export const syncMaterialData = async (req, res) => {
 
             const materialRow = await Predictions_DataDbInstance.get(
                 'SELECT Material_ID FROM Material WHERE Material_A9B_Number = ?',
-                [source.Material]
+                [firstRow.Material]
             );
 
             if (!materialRow) {
-                console.warn(` Material not found in Material table: ${source.Material}`);
+                console.warn(`Material not found in Material table: ${firstRow.Material}`);
                 continue;
             }
 
             const materialId = materialRow.Material_ID;
 
-            if (violationReplacementPart) {
-                const plantName = source.Plant?.trim();
-
-                if (!plantName) {
-                    console.warn(` No Plant specified for Material ${source.Material}`);
-                    continue;
-                }
-
-                const plantRow = await Predictions_DataDbInstance.get(
-                    `SELECT Plant_ID FROM Plant WHERE Plant_Name = ? COLLATE NOCASE`,
-                    [plantName]
-                );                
-
-                if (!plantRow) {
-                    console.warn(` Plant '${plantName}' not found in Plant table for Material '${source.Material}'`);
-                    continue;
-                }
-
-                const plantId = plantRow.Plant_ID;
-
-                const insertReplacementPartQuery = `
-                    INSERT OR IGNORE INTO ReplacementPart (Material_ID, Plant_ID)
-                    VALUES (?, ?)
-                `;
-
-                await Predictions_DataDbInstance.run(insertReplacementPartQuery, [materialId, plantId]);
-
-            }
-
-            if (source.Serial_No_Profile && source.Serial_No_Profile.trim()) {
+            // Serial Number Profile (only once)
+            if (firstRow.Serial_No_Profile && firstRow.Serial_No_Profile.trim()) {
                 const insertSerialQuery = `
                     INSERT INTO SerialNumberProfile (Material_ID, Tracking_Number)
                     VALUES (?, ?)
                     ON CONFLICT(Material_ID) DO UPDATE SET
                         Tracking_Number = excluded.Tracking_Number
                 `;
-                await Predictions_DataDbInstance.run(insertSerialQuery, [materialId, source.Serial_No_Profile.trim()]);
+                await Predictions_DataDbInstance.run(insertSerialQuery, [
+                    materialId,
+                    firstRow.Serial_No_Profile.trim()
+                ]);
+            }
+
+            // ReplacementPart per unique Plant
+            for (const row of materialRows) {
+                const plantName = row.Plant?.trim();
+                const violation = row.ViolationReplacementPart === '1';
+
+                if (!violation) continue;
+
+                if (!plantName) {
+                    console.warn(`No Plant specified for '${row.Material}'`);
+                    continue;
+                }
+
+                const plantRow = await Predictions_DataDbInstance.get(
+                    `SELECT Plant_ID FROM Plant WHERE Plant_Name = ? COLLATE NOCASE`,
+                    [plantName]
+                );
+
+                if (!plantRow) {
+                    console.warn(`Plant '${plantName}' not found for Material '${row.Material}'`);
+                    continue;
+                }
+
+                const plantId = plantRow.Plant_ID;
+
+                const insertReplacementPartQuery = `
+                INSERT INTO ReplacementPart (Material_ID, Plant_ID, ReplacementReason, Timestamp)
+                VALUES (?, ?, 'Replacement Part', ?)
+                ON CONFLICT(Material_ID, Plant_ID) DO UPDATE SET
+                    ReplacementReason = excluded.ReplacementReason
+            `;
+            
+            const timestamp = new Date().toISOString();
+            await Predictions_DataDbInstance.run(insertReplacementPartQuery, [materialId, plantId, timestamp]);
+            
             }
         }
 
@@ -110,15 +123,17 @@ export const syncMaterialData = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: " Material, ReplacementPart, and SerialNumberProfile tables synced successfully"
+            message: "Material, ReplacementPart, and SerialNumberProfile tables synced successfully"
         });
     } catch (err) {
-        await Predictions_DataDbInstance.run("ROLLBACK");
-        console.error(" Error syncing Material numbers:", err);
+        if (transactionStarted) {
+            await Predictions_DataDbInstance.run("ROLLBACK");
+        }
+        console.error("Error syncing Material numbers:", err);
         res.status(500).json({
             success: false,
             message: "Failed to sync Material numbers",
-            error: err.message,
+            error: err.message
         });
     }
 };

@@ -28,10 +28,22 @@ import { syncTurbineData } from '../Controller/ProcessedController/SyncTurbineDa
 import { syncPlantCoordinates, syncPlantData } from '../Controller/ProcessedController/SyncPlantDataController.js';
 
 // Upload Processed Data imports
-import { uploadProcessedTurbineData, uploadProcessedMaterialData } from '../Controller/ProcessedController/UploadProcessedDataController.js';
+import { uploadProcessedTurbineData, uploadProcessedMaterialData, fetchReplacementParts, fetchPlantTable, fetchMaterialTable } from '../Controller/ProcessedController/UploadProcessedDataController.js';
 
 // Upload Predictions Data imports
 import { uploadTurbinePredictionsData, uploadMaterialPredictionsData } from '../Controller/ProcessedController/UploadPredictionsDataController.js';
+
+// Upload Catecory Predictions Data imports
+import { syncMaterialCategoryPredictionsController } from '../Controller/ProcessedController/SyncMaterialCategoryPredictions.js';
+
+// Upload Plant Specific Material Status Transitions imports
+import { syncPlantSpecificMaterialStatusTransitions } from '../Controller/ProcessedController/syncPlantSpecificMaterialStatusTransitions.js';
+
+//Upload Material Category Health Score imports
+import { syncMaterialCategoryHealthScores } from '../Controller/ProcessedController/syncMaterialCategoryHealthScores.js';
+
+//Uplodad Material Maintenance Forecasts imports
+import { syncMaterialMaintenanceForecasts } from '../Controller/ProcessedController/SyncMaterialMaintenanceForecasts.js';
 
 
 import { ScriptController } from '../Controller/Script/ScriptController.js';
@@ -69,7 +81,10 @@ router.post('/verifyTechnicianLinks', verifyTechnicianLinksController);
 router.post("/syncReplacementPredictions", syncReplacementPredictionsController);
 router.post('/syncMonteCarloDominance', syncMonteCarloDominanceController);
 router.post('/syncReplacementTrends', syncReplacementTrendsController);
-
+router.post('/syncMaterialCategoryPredictions', syncMaterialCategoryPredictionsController);
+router.post("/syncPlantSpecificMaterialStatusTransitions", syncPlantSpecificMaterialStatusTransitions);
+router.post("/syncMaterialCategoryHealthScores", syncMaterialCategoryHealthScores);
+router.post("/syncMaterialMaintenanceForecasts", syncMaterialMaintenanceForecasts);
 
 // Common routes
 
@@ -78,6 +93,9 @@ router.get('/fetch_UnprocessedMaterialData', getUnprocessedMaterialData);
 router.get('/fetch_ProcessedMaterialData', getProcessedMaterialData);
 router.get('/fetch_ProcessedTurbineData', getProcessedTurbineData);
 router.get('/fetch_PredictionsData', getPredictionsData);
+router.get('/fetchReplacementParts', fetchReplacementParts);
+router.get("/fetchPlantTable", fetchPlantTable);
+router.get("/fetchMaterialTable", fetchMaterialTable);
 
 router.get('/technicians', getTechnicians);
 router.get('/locations', getLocations);

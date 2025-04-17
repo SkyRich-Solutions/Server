@@ -87,131 +87,116 @@ export const uploadMaterialPredictionsData = async (req, res) => {
 
 export const uploadTurbinePredictionsData = async (req, res) => {
     try {
-        const processed_Data = req.body;
+        const cleanedData = req.body;
 
-        if (!Array.isArray(processed_Data) || processed_Data.length === 0) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Invalid data format' });
+        if (!Array.isArray(cleanedData) || cleanedData.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid TurbineData format'
+            });
         }
 
         await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
-        for (const record of processed_Data) {
-            // Check if record exists
-            const existing = await Predictions_DataDbInstance.get(
-                `SELECT 1 FROM TurbineData WHERE FunctionalLoc = ?`,
-                [record.FunctionalLoc]
-            );
+        for (const record of cleanedData) {
+            try {
+                if (!record.FunctionalLoc || !record.MaintPlant) {
+                    console.warn('Skipping record due to missing FunctionalLoc or MaintPlant:', record);
+                    continue;
+                }
 
-            if (existing) {
-                // If exists, update only necessary fields
-                await Predictions_DataDbInstance.run(
-                    `UPDATE TurbineData 
-                     SET Description = ?, MaintPlant = ?, PlanningPlant = ?, Platform = ?, WTShortName = ?, 
-                         TurbineModel = ?, MkVersion = ?, Revision = ?, NominalPower = ?, OriginalEqManufact = ?, 
-                         SBOMForTurbine = ?, SCADAName = ?, SCADAParkID = ?, SCADACode = ?, SCADAFunctionalLoc = ?, 
-                         TechID = ?, Region = ?, Technology = ?, HubHeight = ?, TowerHeight = ?, TurbineClass = ?, UnknownMaintPlant = ?, UnknownPlanningPlant = ?,
-                         TurbineLatitude = ?, TurbineLongitude = ?
-                     WHERE FunctionalLoc = ?`,
-                    [
-                        record.Description,
-                        record.MaintPlant || null,
-                        record.PlanningPlant || null,
-                        record.Platform || null,
-                        record.WTShortName || null,
-                        record.TurbineModel || null,
-                        record.MkVersion || null,
-                        record.Revision || null,
-                        record.NominalPower || null,
-                        record.OriginalEqManufact || null,
-                        record.SBOMForTurbine || null,
-                        record.SCADAName || null,
-                        record.SCADAParkID || null,
-                        record.SCADACode || null,
-                        record.SCADAFunctionalLoc || null,
-                        record.TechID || null,
-                        record.Region || null,
-                        record.Technology || null,
-                        record.HubHeight || null,
-                        record.TowerHeight || null,
-                        record.TurbineClass || null,
-                        record.UnknownMaintPlant || null,
-                        record.UnknownPlanningPlant || null,
-                        record.TurbineLatitude
-                            ? Number(
-                                  parseFloat(record.TurbineLatitude).toFixed(6)
-                              )
-                            : null,
-                        record.TurbineLongitude
-                            ? Number(
-                                  parseFloat(record.TurbineLongitude).toFixed(6)
-                              )
-                            : null,
-                        record.FunctionalLoc
-                    ]
+                // Validate UnknownLocation
+                if (typeof record.UnknownLocation === 'undefined') {
+                    console.warn(`Missing UnknownLocation for FunctionalLoc ${record.FunctionalLoc}`);
+                }
+
+                // Safety: convert to string if needed
+                const unknownLocation = (record.UnknownLocation ?? "0").toString();
+
+                const insertValues = [
+                    record.FunctionalLoc,
+                    record.Description,
+                    record.MaintPlant,
+                    record.PlanningPlant,
+                    record.Platform,
+                    record.WTShortName,
+                    record.TurbineModel,
+                    record.MkVersion,
+                    record.Revision,
+                    record.NominalPower,
+                    record.OriginalEqManufact,
+                    record.SBOMForTurbine,
+                    record.SCADAName,
+                    record.SCADAParkID,
+                    record.SCADACode,
+                    record.SCADAFunctionalLoc,
+                    record.TechID,
+                    record.Region,
+                    record.Technology,
+                    record.HubHeight,
+                    record.TowerHeight,
+                    record.TurbineClass,
+                    record.UnknownMaintPlant,
+                    record.UnknownPlanningPlant,
+                    unknownLocation,
+                    record.TurbineLatitude
+                        ? Number(parseFloat(record.TurbineLatitude).toFixed(6))
+                        : null,
+                    record.TurbineLongitude
+                        ? Number(parseFloat(record.TurbineLongitude).toFixed(6))
+                        : null
+                ];
+
+                // DEBUG: Log the insert size
+                if (insertValues.length !== 27) {
+                    console.error(` Mismatch: Expected 27 values, got ${insertValues.length}`);
+                    console.error('Record:', record);
+                    throw new Error('Insert value count mismatch');
+                }
+
+                const existing = await Predictions_DataDbInstance.get(
+                    `SELECT 1 FROM TurbineData WHERE FunctionalLoc = ?`,
+                    [record.FunctionalLoc]
                 );
-            } else {
-                // If not exists, insert new record
-                await Predictions_DataDbInstance.run(
-                    `INSERT INTO TurbineData 
-                    (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, 
-                    Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, 
-                    SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, UnknownMaintPlant, UnknownPlanningPlant,
-                    TurbineLatitude, TurbineLongitude)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [
-                        record.FunctionalLoc,
-                        record.Description,
-                        record.MaintPlant || null,
-                        record.PlanningPlant || null,
-                        record.Platform || null,
-                        record.WTShortName || null,
-                        record.TurbineModel || null,
-                        record.MkVersion || null,
-                        record.Revision || null,
-                        record.NominalPower || null,
-                        record.OriginalEqManufact || null,
-                        record.SBOMForTurbine || null,
-                        record.SCADAName || null,
-                        record.SCADAParkID || null,
-                        record.SCADACode || null,
-                        record.SCADAFunctionalLoc || null,
-                        record.TechID || null,
-                        record.Region || null,
-                        record.Technology || null,
-                        record.HubHeight || null,
-                        record.TowerHeight || null,
-                        record.TurbineClass || null,
-                        record.UnknownMaintPlant || null,
-                        record.UnknownPlanningPlant || null,
-                        record.TurbineLatitude
-                            ? Number(
-                                  parseFloat(record.TurbineLatitude).toFixed(6)
-                              )
-                            : null,
-                        record.TurbineLongitude
-                            ? Number(
-                                  parseFloat(record.TurbineLongitude).toFixed(6)
-                              )
-                            : null
-                    ]
-                );
+
+                if (existing) {
+                    await Predictions_DataDbInstance.run(
+                        `UPDATE TurbineData 
+                         SET Description = ?, MaintPlant = ?, PlanningPlant = ?, Platform = ?, WTShortName = ?, 
+                             TurbineModel = ?, MkVersion = ?, Revision = ?, NominalPower = ?, OriginalEqManufact = ?, 
+                             SBOMForTurbine = ?, SCADAName = ?, SCADAParkID = ?, SCADACode = ?, SCADAFunctionalLoc = ?, 
+                             TechID = ?, Region = ?, Technology = ?, HubHeight = ?, TowerHeight = ?, TurbineClass = ?, 
+                             UnknownMaintPlant = ?, UnknownPlanningPlant = ?, UnknownLocation = ?, TurbineLatitude = ?, 
+                             TurbineLongitude = ? WHERE FunctionalLoc = ?`,
+                        [...insertValues.slice(1), record.FunctionalLoc] // use everything except FunctionalLoc, then add it last for WHERE clause
+                    );
+                } else {
+                    await Predictions_DataDbInstance.run(
+                        `INSERT INTO TurbineData 
+                         (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, 
+                          Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, 
+                          SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, 
+                          UnknownMaintPlant, UnknownPlanningPlant, UnknownLocation, TurbineLatitude, TurbineLongitude)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        insertValues
+                    );
+                }
+            } catch (rowError) {
+                console.error(` Failed to persist record for FunctionalLoc ${record.FunctionalLoc}:`, rowError);
             }
         }
 
         await Predictions_DataDbInstance.run('COMMIT');
-
         res.status(201).json({
             success: true,
-            message: 'Processed turbine data successfully persisted'
+            message: 'Cleaned TurbineData successfully persisted'
         });
     } catch (error) {
         await Predictions_DataDbInstance.run('ROLLBACK');
-        console.error('Error saving processed turbine data:', error);
+        console.error(' Error saving cleaned TurbineData:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to save processed turbine data',
+            message: 'Failed to save cleaned TurbineData',
             error: error.message
         });
     }

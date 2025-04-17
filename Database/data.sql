@@ -24,6 +24,11 @@ DROP TABLE IF EXISTS ReplacementPrediction;
 DROP TABLE IF EXISTS ReplacementPredictionGlobal;
 DROP TABLE IF EXISTS MonteCarloDominance;
 DROP TABLE IF EXISTS ReplacementTrends;  
+DROP TABLE IF EXISTS MaterialCategoryPredictions;
+DROP TABLE IF EXISTS MaterialStatusTransitions;
+DROP TABLE IF EXISTS MaterialCategoryHealthScores;
+DROP TABLE IF EXISTS MaterialCategoryScoreSummary;
+DROP TABLE IF EXISTS MaintenanceForecasts;
 
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
@@ -46,6 +51,7 @@ CREATE TABLE IF NOT EXISTS MaterialData (
     ViolationReplacementPart TEXT,
     MaterialCategory TEXT,
     UnknownPlant TEXT,
+    Timestamp TEXT,
     PRIMARY KEY (Material, Plant),
     FOREIGN KEY (Plant) REFERENCES Plant(Plant_Code)
         ON UPDATE CASCADE 
@@ -79,6 +85,7 @@ CREATE TABLE IF NOT EXISTS TurbineData (
     TurbineLongitude REAL,
     UnknownMaintPlant TEXT,
     UnknownPlanningPlant TEXT,
+    UnknownLocation TEXT,
     FOREIGN KEY (MaintPlant) REFERENCES Plant(Plant_Code)
         ON UPDATE CASCADE 
         ON DELETE SET NULL,
@@ -167,9 +174,11 @@ CREATE TABLE IF NOT EXISTS ReplacementPart (
     ReplacementDate DATE,
     ReplacementReason TEXT DEFAULT 'Replacement Part',
     Technician_ID INTEGER,
+    Timestamp DATETIME,
     FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID),
     FOREIGN KEY (Plant_ID) REFERENCES Plant(Plant_ID),
-    FOREIGN KEY (Technician_ID) REFERENCES Technician(Technician_ID)
+    FOREIGN KEY (Technician_ID) REFERENCES Technician(Technician_ID),
+    UNIQUE(Material_ID, Plant_ID)
 );
 
 CREATE TABLE IF NOT EXISTS SCADA (
@@ -239,7 +248,6 @@ CREATE TABLE IF NOT EXISTS ReplacementPredictionGlobal (
     UNIQUE(Material_ID, MaterialCategory)
 );
 
-
 CREATE TABLE IF NOT EXISTS MonteCarloDominance (
     Dominance_ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Description TEXT UNIQUE,
@@ -256,6 +264,54 @@ CREATE TABLE IF NOT EXISTS ReplacementTrends (
     Count INTEGER,
     UNIQUE(Timestamp, Description)
 );
+
+CREATE TABLE IF NOT EXISTS MaterialCategoryPredictions (
+    Category TEXT PRIMARY KEY,
+    BayesianProbability REAL,
+    MonteCarloEstimate REAL,
+    MonteCarlo_5th_Percentile REAL,
+    MonteCarlo_50th_Percentile REAL,
+    MonteCarlo_95th_Percentile REAL
+);
+
+CREATE TABLE IF NOT EXISTS MaterialStatusTransitions (
+    Material TEXT,
+    Description TEXT,
+    PrevStatus TEXT,
+    Plant TEXT,
+    PlantSpecificMaterialStatus TEXT,
+    TransitionCount INTEGER,
+    Direction TEXT,
+    PRIMARY KEY (Material, PrevStatus, Plant, PlantSpecificMaterialStatus)
+);
+
+CREATE TABLE IF NOT EXISTS MaterialCategoryHealthScores (
+    CategoryHealthScore_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Category TEXT NOT NULL,
+    Plant TEXT NOT NULL,
+    HealthScore REAL NOT NULL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(Category, Plant)
+);
+
+CREATE TABLE IF NOT EXISTS MaterialCategoryScoreSummary (
+    Category TEXT PRIMARY KEY,
+    TotalCategoryScore REAL,
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS MaintenanceForecasts (
+    Forecast_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Material_ID INTEGER NOT NULL,
+    Plant_ID INTEGER NOT NULL,
+    LastMaintenance DATE,
+    AverageIntervalDays INTEGER,
+    NextEstimatedMaintenanceDate DATE,
+    UNIQUE(Material_ID, Plant_ID),
+    FOREIGN KEY (Material_ID) REFERENCES Material(Material_ID),
+    FOREIGN KEY (Plant_ID) REFERENCES Plant(Plant_ID)
+);
+
 ------------------------------------------------------------------
 
 INSERT INTO Technician (Technician_ID, Name, Surname) VALUES
@@ -315,6 +371,7 @@ CREATE TABLE IF NOT EXISTS TurbineData (
     TurbineLongitude REAL,
     UnknownMaintPlant TEXT,
     UnknownPlanningPlant TEXT
+    UnknownLocation TEXT
 );
 ------------------------------------------------------------------
 
@@ -430,5 +487,4 @@ VALUES
  'Siemens Gamesa', 'ZZ0011', 'ARAUCO', '', 'W1187', '', '61028449', 'Latin America', 'DAC', '80,00 m', '', 'IIA', -2.8914993, -6.6934122),
 ('AR0003=G010', 'WT Arauco I & II ,AG-90 (61028450)', '50S1', '50S1', 'SG2X', 'AG-90', 'SG 2.1-114', '', '', '2.625 KW',
  'Siemens Gamesa', 'ZZ0011', 'ARAUCO', '', 'W1187', '', '61028450', 'Latin America', 'DAC', '80,00 m', '', 'IIA', -2.8915094, -6.6940842);
-
 
