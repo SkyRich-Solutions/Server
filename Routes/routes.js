@@ -25,7 +25,7 @@ import { syncTurbineData } from '../Controller/ProcessedController/SyncTurbineDa
 
 //  Plant imports
 
-import { syncPlantCoordinates } from '../Controller/ProcessedController/SyncPlantDataController.js';
+import { syncPlantCoordinates, syncPlantData } from '../Controller/ProcessedController/SyncPlantDataController.js';
 
 // Upload Processed Data imports
 import { uploadProcessedTurbineData, uploadProcessedMaterialData, fetchReplacementParts, fetchPlantTable, fetchMaterialTable } from '../Controller/ProcessedController/UploadProcessedDataController.js';
@@ -47,8 +47,8 @@ import { syncMaterialMaintenanceForecasts } from '../Controller/ProcessedControl
 
 
 import { ScriptController } from '../Controller/Script/ScriptController.js';
-import { getViolations } from '../Controller/ProcessedController/ViolationController.js';
-import { MaintPlant , PlanningPlant , MainAndPlanningPlant} from '../Controller/ProcessedController/MapsController.js';
+import { getTurbineViolation, getViolations, getViolations0 , getTurbineViolation0, getMaterialClassified, getMaterialUnclassified, getMaterialUnknownPlant, getMaterialKnownPlant } from '../Controller/ProcessedController/ViolationController.js';
+import { MaintPlant , PlanningPlant , MainAndPlanningPlant, WarehousePlanningPlant, WarehouseManufacturingPlant, WarehousePlant} from '../Controller/ProcessedController/MapsController.js';
 
 const router = express.Router();
 
@@ -103,10 +103,20 @@ router.get('/locations', getLocations);
 // Map routes
 router.get('/MaintPlant' , MaintPlant);
 router.get('/PlanningPlant' , PlanningPlant);
-router.get('/MainAndPlanningPlant' , MainAndPlanningPlant);
-
+router.get('/MainAndPlanningPlant', MainAndPlanningPlant);
+router.get('/getPlantData', syncPlantData);
+router.get('/getWarehousePlanningPlant', WarehousePlanningPlant);
+router.get('/getWarehouseManufacturingPlant', WarehouseManufacturingPlant);
+router.get('/getWarehosuePlant', WarehousePlant);
 
 // Violation routes
  router.get('/violations', getViolations);
+ router.get('/getViolation0' , getViolations0);
+ router.get('/getTurbineViolation', getTurbineViolation);
+ router.get('/getTurbineViolation0', getTurbineViolation0);   
+ router.get('/getMaterialClassifiedPlant', getMaterialClassified);
+ router.get('/getMaterialUnclassifiedPlant', getMaterialUnclassified);
+ router.get('/getMaterialUnknownPlant',getMaterialUnknownPlant);
+ router.get('/getMaterialKnownPlant', getMaterialKnownPlant);
 
 export default router;

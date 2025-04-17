@@ -1,5 +1,4 @@
 
-
 -- Predictions Database ---------------------------------------------
 
 -- Drop tables if they exist  
@@ -371,7 +370,7 @@ CREATE TABLE IF NOT EXISTS TurbineData (
     TurbineLatitude REAL,
     TurbineLongitude REAL,
     UnknownMaintPlant TEXT,
-    UnknownPlanningPlant TEXT,
+    UnknownPlanningPlant TEXT
     UnknownLocation TEXT
 );
 ------------------------------------------------------------------

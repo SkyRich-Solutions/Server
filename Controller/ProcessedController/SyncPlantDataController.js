@@ -22,23 +22,25 @@ export const syncPlantCoordinates = async (req, res) => {
     const { plants } = req.body;
 
     if (!Array.isArray(plants)) {
-      return res.status(400).json({ success: false, message: 'Invalid plant list' });
+        return res
+            .status(400)
+            .json({ success: false, message: 'Invalid plant list' });
     }
 
     try {
         await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
         for (const raw of plants) {
-          const code = raw.code?.trim();
-          const isPlant = !!raw.isPlant;
-          const isPlanningPlant = !!raw.isPlanningPlant;
-          const isManufacturingPlant = !!raw.isManufacturingPlant;
-        
-          if (!code) {
-            console.warn(' Skipping plant entry due to missing code:', raw);
-            continue;
-          }
-        
+            const code = raw.code?.trim();
+            const isPlant = !!raw.isPlant;
+            const isPlanningPlant = !!raw.isPlanningPlant;
+            const isManufacturingPlant = !!raw.isManufacturingPlant;
+
+            if (!code) {
+                console.warn(' Skipping plant entry due to missing code:', raw);
+                continue;
+            }
+
             const prefix = code.slice(0, 2);
             let coords = geoMapping[prefix];
             let defaulted = 0;
@@ -56,8 +58,10 @@ export const syncPlantCoordinates = async (req, res) => {
             );
 
             const finalIsPlant = isPlant || (existing?.IsPlant ?? 0);
-            const finalIsPlanningPlant = isPlanningPlant || (existing?.IsPlanningPlant ?? 0);
-            const finalIsManufacturingPlant = isManufacturingPlant || (existing?.IsManufacturingPlant ?? 0);
+            const finalIsPlanningPlant =
+                isPlanningPlant || (existing?.IsPlanningPlant ?? 0);
+            const finalIsManufacturingPlant =
+                isManufacturingPlant || (existing?.IsManufacturingPlant ?? 0);
 
             const query = `
               INSERT INTO Plant (Plant_Name, Plant_Latitude, Plant_Longitude, Defaulted, IsPlant, IsPlanningPlant, IsManufacturingPlant)
@@ -96,6 +100,22 @@ export const syncPlantCoordinates = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Failed to sync plant roles',
+            error: error.message
+        });
+    }
+};
+
+export const syncPlantData = async (req, res) => {
+    try {
+        const query = ` SELECT * FROM Plant`;
+        const data = await Predictions_DataDbInstance.all(query);
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error syncing plant data:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to sync plant data',
             error: error.message
         });
     }
