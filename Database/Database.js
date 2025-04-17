@@ -29,7 +29,7 @@ const InitializeDatabases = async () => {
 
         if (!Predictions_DataDbInstance) {
             Predictions_DataDbInstance = await open({
-                filename: process.env.PREDICTION_DATABASE_PATH, // Path to Processed Data.db
+                filename: process.env.Predictions_DATABASE_PATH, // Path to Processed Data.db
                 driver: sqlite3.Database,
             });
             console.log('✅ Predictions Database Connected!');
