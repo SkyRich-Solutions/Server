@@ -10,8 +10,7 @@ import {
     getPredictionsData,
     getProcessedMaterialData,
     getProcessedTurbineData,
-    getTechnicians,
-    getLocations
+    getTechnicians
 } from '../Controller/ProcessedController/DataController.js';
 // Fault Report imports
 import {
@@ -75,12 +74,10 @@ import { syncTurbinePlatformHealthScores } from '../Controller/ProcessedControll
 import { ScriptController } from '../Controller/Script/ScriptController.js';
 
 import {
-    MaintPlant,
-    PlanningPlant,
-    MainAndPlanningPlant,
     WarehousePlanningPlant,
     WarehouseManufacturingPlant,
-    WarehousePlant
+    WarehousePlant,
+    getAllTurbine
 } from '../Controller/ProcessedController/MapsController.js';
 
 import {
@@ -153,12 +150,9 @@ router.get("/fetchMaterialTable", fetchMaterialTable);
 router.get("/fetchReplacementPrediction", fetchReplacementPrediction);
 
 router.get('/technicians', getTechnicians);
-router.get('/locations', getLocations);
 
 // Map routes
-router.get('/MaintPlant', MaintPlant);
-router.get('/PlanningPlant', PlanningPlant);
-router.get('/MainAndPlanningPlant', MainAndPlanningPlant);
+router.get('/getAllTurbine', getAllTurbine);
 router.get('/getPlantData', syncPlantData);
 router.get('/getWarehousePlanningPlant', WarehousePlanningPlant);
 router.get('/getWarehouseManufacturingPlant', WarehouseManufacturingPlant);
