@@ -1,6 +1,8 @@
-import { processedDbInstance } from "../../Database/Database.js";
+import { processedDbInstance } from '../../Database/Database.js';
 
-export const getViolations = async (req, res) => {
+//-------------------- Material --------------------//
+
+export const getMaterialReplacementPartsViolations = async (req, res) => {
     try {
         const data = await processedDbInstance.all(
             'SELECT COUNT(*) AS total_violations FROM MaterialData WHERE ViolationReplacementPart = 1'
@@ -15,8 +17,7 @@ export const getViolations = async (req, res) => {
     }
 };
 
-
-export const getViolations0= async (req, res) => {
+export const getMaterialCompliantReplacementParts = async (req, res) => {
     try {
         const data = await processedDbInstance.all(
             'SELECT COUNT(*) AS total_violations FROM MaterialData WHERE ViolationReplacementPart = 0'
@@ -31,26 +32,10 @@ export const getViolations0= async (req, res) => {
     }
 };
 
-
-export const getTurbineViolation= async (req, res) => {
+export const getMaterialClassified = async (req, res) => {
     try {
         const data = await processedDbInstance.all(
-            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownMaintPlant = 1 OR UnknownPlanningPlant = 1'
-        );
-        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch Turbine Violations',
-            error: error.message
-        });
-    }
-}
-
-export const getTurbineViolation0 = async (req, res) => {
-    try { 
-        const data = await processedDbInstance.all(
-            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownMaintPlant = 0 AND UnknownPlanningPlant = 0'
+            `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE MaterialCategory != 'Unclassified'`
         );
         res.status(200).json({ success: true, data: data }); // Ensure data is always an array
     } catch (error) {
@@ -60,25 +45,10 @@ export const getTurbineViolation0 = async (req, res) => {
             error: error.message
         });
     }
-}
-
-export const getMaterialClassified = async (req, res) => {
-    try { 
-        const data = await processedDbInstance.all(
-            `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE MaterialCategory = 'Electrical'`
-        );
-        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch Turbine Violations0',
-            error: error.message
-        });
-    }
-}
+};
 
 export const getMaterialUnclassified = async (req, res) => {
-    try { 
+    try {
         const data = await processedDbInstance.all(
             `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE MaterialCategory = 'Unclassified'`
         );
@@ -90,10 +60,10 @@ export const getMaterialUnclassified = async (req, res) => {
             error: error.message
         });
     }
-}
+};
 
 export const getMaterialUnknownPlant = async (req, res) => {
-    try { 
+    try {
         const data = await processedDbInstance.all(
             `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE UnknownPlant = 'Unknown'`
         );
@@ -105,10 +75,10 @@ export const getMaterialUnknownPlant = async (req, res) => {
             error: error.message
         });
     }
-}
+};
 
 export const getMaterialKnownPlant = async (req, res) => {
-    try { 
+    try {
         const data = await processedDbInstance.all(
             `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE UnknownPlant = 'Known'`
         );
@@ -120,5 +90,95 @@ export const getMaterialKnownPlant = async (req, res) => {
             error: error.message
         });
     }
-}
+};
 
+//-------------------- Turbine --------------------//
+
+export const getTurbineUnknownPlanningPlantViolation = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownPlanningPlant = 1'
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch Turbine Violations',
+            error: error.message
+        });
+    }
+};
+
+export const getTurbineUnknownMaintPlantViolation = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownMaintPlant = 1'
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch Turbine Violations',
+            error: error.message
+        });
+    }
+};
+
+export const getTurbineKnownMaintPlant = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownMaintPlant = 0'
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch Turbine Violations0',
+            error: error.message
+        });
+    }
+};
+
+export const getTurbineKnownPlanningPlant = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownPlanningPlant = 0'
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch Turbine Planning Plant',
+            error: error.message
+        });
+    }
+};
+
+export const getTurbineUnknownLocation = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownLocation = 1'
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch Unknown Turbine Loaction',
+            error: error.message
+        });
+    }
+};
+export const getTurbineKnownLocation = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT COUNT(*) AS total_violations FROM TurbineData WHERE UnknownLocation = 0'
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch Known Turbine Loaction',
+            error: error.message
+        });
+    }
+};

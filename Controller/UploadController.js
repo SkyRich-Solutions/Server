@@ -27,7 +27,7 @@ const tableSchemaMapping = {
             Plant: 'Plant',
             'Plant-Specific Material Status': 'PlantSpecificMaterialStatus',
             'Batch Management(Plant)': 'BatchManagementPlant',
-            'Serial No. Profile': 'SerialNoProfile',
+            'Serial No. Profile': 'Serial_No_Profile',
             'Replacement Part': 'ReplacementPart',
             'Used in a S-bom': 'UsedInSBom'
         }
