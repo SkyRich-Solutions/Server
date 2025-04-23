@@ -1,4 +1,3 @@
-// Controller/ProcessedController/__tests__/SyncPlantSpecificMaterialStatusTransitions.test.js
 import { jest } from '@jest/globals';
 
 const mockAll = jest.fn();

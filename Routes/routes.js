@@ -37,10 +37,10 @@ import { uploadTurbinePredictionsData, uploadMaterialPredictionsData } from '../
 import { syncMaterialCategoryPredictionsController } from '../Controller/ProcessedController/SyncMaterialCategoryPredictions.js';
 
 // Upload Plant Specific Material Status Transitions imports
-import { syncPlantSpecificMaterialStatusTransitions } from '../Controller/ProcessedController/syncPlantSpecificMaterialStatusTransitions.js';
+import { syncPlantSpecificMaterialStatusTransitions } from '../Controller/ProcessedController/SyncPlantSpecificMaterialStatusTransitions.js';
 
 //Upload Material Category Health Score imports
-import { syncMaterialCategoryHealthScores } from '../Controller/ProcessedController/syncMaterialCategoryHealthScores.js';
+import { syncMaterialCategoryHealthScores } from '../Controller/ProcessedController/SyncMaterialCategoryHealthScores.js';
 
 //Uplodad Material Maintenance Forecasts imports
 import { syncMaterialMaintenanceForecasts } from '../Controller/ProcessedController/SyncMaterialMaintenanceForecasts.js';

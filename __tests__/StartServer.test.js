@@ -1,4 +1,3 @@
-// __tests__/StartServer.test.js
 import http from 'http';
 import { jest } from '@jest/globals';
 

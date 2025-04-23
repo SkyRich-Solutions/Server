@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SkyRich Solutions – Frontend QA Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 2rem; }
+        h1 { color: #1a202c; }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        a.button {
+            display: inline-block;
+            padding: 0.7rem 1.5rem;
+            background-color: #2563eb;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a.button:hover {
+            background-color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <h1>SkyRich Solutions – Frontend QA Dashboard</h1>
+
+    <div class="card">
+        <h2>✅ Jest Unit Tests</h2>
+        <p>Explore the outcome of all React unit tests including pass/fail summaries and runtime durations.</p>
+        <a href="../../test-report/test-report.html" class="button" target="_blank">View Unit Test Report</a>
+    </div>
+
+    <div class="card">
+        <h2>📊 Code Coverage</h2>
+        <p>Visualize which parts of your frontend codebase are covered by tests.</p>
+        <a href="../../htmlcov/index.html" class="button" target="_blank">View Coverage Dashboard</a>
+    </div>
+
+    <p style="text-align: center; color: #555; margin-top: 2rem;">
+        ⏱️ Last updated: <span id="timestamp">{{LAST_UPDATED}}</span>
+    </p>
+</body>
+</html>
