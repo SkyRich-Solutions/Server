@@ -374,7 +374,7 @@ INSERT INTO Technician (Technician_ID, Name, Surname) VALUES
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
 
-PRAGMA foreign_keys = ON;
+
 
 CREATE TABLE IF NOT EXISTS MaterialData (
     Material TEXT,
@@ -431,7 +431,7 @@ DROP TABLE IF EXISTS TurbineData;
 
 
 -- Enable foreign key constraints
-PRAGMA foreign_keys = ON;
+
 
 
 CREATE TABLE IF NOT EXISTS MaterialData (

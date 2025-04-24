@@ -95,9 +95,24 @@ import {
     getTurbineKnownLocation
 } from '../Controller/ProcessedController/ViolationController.js';
 
+
 const router = express.Router();
 
 import multer from 'multer';
+import { getAllFaultReports } from '../Controller/ProcessedController/FaultReportController.js';
+import { getReplacementPart } from '../Controller/ProcessedController/ReplacementPartsController.js';
+import { getReplacementPrediction, getReplacementPredictionGlobal } from '../Controller/ProcessedController/ReplacementPredictionsController.js';
+import { getReplacementTrends } from '../Controller/ProcessedController/ReplacementTrendsController.js';
+import { getMaterialCategoryHealthScores } from '../Controller/ProcessedController/MaterialCategoryHealthScoresController.js';
+import { getMaterialCategoryPredictions } from '../Controller/ProcessedController/MaterialCategoryPredictionsController.js';
+import { getMaterialComponentHealthScore } from '../Controller/ProcessedController/MaterialComponentHealthScoresController.js';
+import { getMaterialComponentScoreSummary } from '../Controller/ProcessedController/MaterialComponentScoreSummaryController.js';
+import { getMaterialCategoryScoreSummary } from '../Controller/ProcessedController/MaterialCategoryScoreSummaryController.js';
+import { getTurbineModelHealthScore } from '../Controller/ProcessedController/TurbineModelHealthScoresController.js';
+import { getTurbineModelScoreSummary } from '../Controller/ProcessedController/TurbineModelScoreSummaryController.js';
+import { getTurbinePlatformHealthScore } from '../Controller/ProcessedController/TurbinePlatformHealthScoresController.js';
+import { getTurbinePlatformScoreSummary } from '../Controller/ProcessedController/TurbinePlatformScoreSummaryController.js';
+
 
 const storage = multer.memoryStorage(); // Store as buffer in memory
 const uploadpdf = multer({ storage: storage });
@@ -194,5 +209,22 @@ router.get('/getTurbineKnownMaintPlant', getTurbineKnownMaintPlant);
 router.get('/getTurbineKnownPlanningPlant', getTurbineKnownPlanningPlant);
 router.get('/getTurbineUnknownLocation', getTurbineUnknownLocation);
 router.get('/getTurbineKnownLocation', getTurbineKnownLocation);
+
+//FaultReport
+router.get('/getAllFaultReports', getAllFaultReports);
+router.get('/getMaterialCategoryHealthScores', getMaterialCategoryHealthScores);
+router.get('/getMaterialCategoryPredictions', getMaterialCategoryPredictions);
+router.get('/getMaterialCategoryScoreSummary', getMaterialCategoryScoreSummary);
+router.get('/getMaterialComponentHealthScore', getMaterialComponentHealthScore);
+router.get('/getMaterialComponentScoreSummary', getMaterialComponentScoreSummary);
+router.get('/getReplacementPart', getReplacementPart);
+router.get('/getReplacementPrediction', getReplacementPrediction);
+router.get('/getReplacementPredictionGlobal', getReplacementPredictionGlobal);
+router.get('/getReplacementTrends', getReplacementTrends);
+router.get('/getTurbineModelHealthScore', getTurbineModelHealthScore);
+router.get('/getTurbineModelScoreSummary', getTurbineModelScoreSummary);
+router.get('/getTurbinePlatformHealthScore', getTurbinePlatformHealthScore);
+router.get('/getTurbinePlatformScoreSummary', getTurbinePlatformScoreSummary);
+
 
 export default router;
