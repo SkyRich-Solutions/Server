@@ -1,0 +1,51 @@
+import {
+    unprocessedDbInstance,
+    processedDbInstance,
+    Predictions_DataDbInstance
+} from '../../Database/Database.js';
+
+
+export const getMaterialCategoryHealthScores = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialCategoryHealthScores '
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch MainPlant and PlanningPlant data',
+            error: error.message
+        });
+    }
+};
+
+export const getMaterialCategoryPredictions = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialCategoryPredictions '
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch MainPlant and PlanningPlant data',
+            error: error.message
+        });
+    }
+};
+
+export const getMaterialCategoryScoreSummary = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialCategoryScoreSummary '
+        );
+        res.status(200).json({ success: true, data: data }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch MainPlant and PlanningPlant data',
+            error: error.message
+        });
+    }
+};
