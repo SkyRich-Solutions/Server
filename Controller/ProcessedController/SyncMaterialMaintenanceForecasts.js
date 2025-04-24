@@ -10,8 +10,6 @@ export const syncMaterialMaintenanceForecasts = async (req, res) => {
         });
     }
 
-    console.log(`Received ${forecasts.length} maintenance forecast rows`);
-
     if (forecasts.length === 0) {
         return res.status(200).json({
             success: true,
@@ -74,8 +72,6 @@ export const syncMaterialMaintenanceForecasts = async (req, res) => {
         }
 
         await Predictions_DataDbInstance.run("COMMIT");
-
-        console.log(`Synced ${inserted} maintenance forecasts`);
 
         res.status(200).json({
             success: true,
