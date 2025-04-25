@@ -100,18 +100,18 @@ const router = express.Router();
 
 import multer from 'multer';
 import { getAllFaultReports } from '../Controller/ProcessedController/FaultReportController.js';
-import { getReplacementPart } from '../Controller/ProcessedController/ReplacementPartsController.js';
-import { getReplacementPrediction, getReplacementPredictionGlobal } from '../Controller/ProcessedController/ReplacementPredictionsController.js';
-import { getReplacementTrends } from '../Controller/ProcessedController/ReplacementTrendsController.js';
-import { getMaterialCategoryHealthScores } from '../Controller/ProcessedController/MaterialCategoryHealthScoresController.js';
-import { getMaterialCategoryPredictions } from '../Controller/ProcessedController/MaterialCategoryPredictionsController.js';
-import { getMaterialComponentHealthScore } from '../Controller/ProcessedController/MaterialComponentHealthScoresController.js';
-import { getMaterialComponentScoreSummary } from '../Controller/ProcessedController/MaterialComponentScoreSummaryController.js';
-import { getMaterialCategoryScoreSummary } from '../Controller/ProcessedController/MaterialCategoryScoreSummaryController.js';
-import { getTurbineModelHealthScore } from '../Controller/ProcessedController/TurbineModelHealthScoresController.js';
-import { getTurbineModelScoreSummary } from '../Controller/ProcessedController/TurbineModelScoreSummaryController.js';
-import { getTurbinePlatformHealthScore } from '../Controller/ProcessedController/TurbinePlatformHealthScoresController.js';
-import { getTurbinePlatformScoreSummary } from '../Controller/ProcessedController/TurbinePlatformScoreSummaryController.js';
+import { getMaterialReplacementParts } from '../Controller/ProcessedController/ReplacementPartsController.js';
+import { getReplacementPrediction, getReplacementPredictionGlobal } from '../Controller/ProcessedController/ReplacementPartsController.js';
+import { getMaterialReplacementPartsTrends } from '../Controller/ProcessedController/ReplacementPartsController.js';
+import { getMaterialCategoryHealthScores } from '../Controller/ProcessedController/MaterialCategoryController.js';
+import { getMaterialCategoryPredictions } from '../Controller/ProcessedController/MaterialCategoryController.js';
+import { getMaterialComponentHealthScore } from '../Controller/ProcessedController/MaterialComponentController.js';
+import { getMaterialComponentScoreSummary } from '../Controller/ProcessedController/MaterialComponentController.js';
+import { getMaterialCategoryScoreSummary } from '../Controller/ProcessedController/MaterialCategoryController.js';
+import { getTurbineModelHealthScore } from '../Controller/ProcessedController/TurbineModelController.js';
+import { getTurbineModelScoreSummary } from '../Controller/ProcessedController/TurbineModelController.js';
+import { getTurbinePlatformHealthScore } from '../Controller/ProcessedController/TurbinePlatformController.js';
+import { getTurbinePlatformScoreSummary } from '../Controller/ProcessedController/TurbinePlatformController.js';
 
 
 const storage = multer.memoryStorage(); // Store as buffer in memory
@@ -217,10 +217,10 @@ router.get('/getMaterialCategoryPredictions', getMaterialCategoryPredictions);
 router.get('/getMaterialCategoryScoreSummary', getMaterialCategoryScoreSummary);
 router.get('/getMaterialComponentHealthScore', getMaterialComponentHealthScore);
 router.get('/getMaterialComponentScoreSummary', getMaterialComponentScoreSummary);
-router.get('/getReplacementPart', getReplacementPart);
+router.get('/getReplacementPart', getMaterialReplacementParts);
 router.get('/getReplacementPrediction', getReplacementPrediction);
 router.get('/getReplacementPredictionGlobal', getReplacementPredictionGlobal);
-router.get('/getReplacementTrends', getReplacementTrends);
+router.get('/getReplacementTrends', getMaterialReplacementPartsTrends);
 router.get('/getTurbineModelHealthScore', getTurbineModelHealthScore);
 router.get('/getTurbineModelScoreSummary', getTurbineModelScoreSummary);
 router.get('/getTurbinePlatformHealthScore', getTurbinePlatformHealthScore);
