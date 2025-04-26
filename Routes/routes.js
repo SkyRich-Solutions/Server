@@ -10,7 +10,8 @@ import {
     getPredictionsData,
     getProcessedMaterialData,
     getProcessedTurbineData,
-    getTechnicians
+    getTechnicians,
+    getLocations
 } from '../Controller/ProcessedController/DataController.js';
 // Fault Report imports
 import {
@@ -165,6 +166,7 @@ router.get("/fetchMaterialTable", fetchMaterialTable);
 router.get("/fetchReplacementPrediction", fetchReplacementPrediction);
 
 router.get('/technicians', getTechnicians);
+router.get('/locations', getLocations);
 
 // Map routes
 router.get('/getAllTurbine', getAllTurbine);

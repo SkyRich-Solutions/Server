@@ -86,13 +86,28 @@ export const getPredictionsData = async (req, res) => {
 export const getTechnicians = async (req, res) => {
     try {
         const data = await Predictions_DataDbInstance.all(
-            'SELECT Technician_ID, Name FROM Technician'
+            'SELECT Technician_ID, Name, Surname FROM Technician'
         );
         res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
     } catch (error) {
         res.status(500).json({
             success: false,
             message: 'Failed to fetch technician data',
+            error: error.message
+        });
+    }
+};
+
+export const getLocations = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT Location_ID, Location_Name FROM Location'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch location data',
             error: error.message
         });
     }
