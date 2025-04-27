@@ -112,3 +112,96 @@ export const getLocations = async (req, res) => {
         });
     }
 };
+
+export const getPredictionMaterialData = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialData'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction material data',
+            error: error.message
+        });
+    }
+};
+
+export const getPredictionTurbineData = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM TurbineData'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+
+export const getMaterialPredictions = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM Material'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+export const getMaintenanceForecasts = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaintenanceForecasts'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+export const getMaterialStatusTransitions = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialStatusTransitions'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+export const getMonteCarloDominance = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MonteCarloDominance'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+
