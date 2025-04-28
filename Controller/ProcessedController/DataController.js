@@ -4,172 +4,64 @@ import {
     Predictions_DataDbInstance
 } from '../../Database/Database.js';
 
-/**
- * POST Method: Receives cleaned data from Python and persists it into the processed database.
- */
-export const uploadProcessedData = async (req, res) => {
-    try {
-        const cleanedData = req.body;
 
-        if (!Array.isArray(cleanedData) || cleanedData.length === 0) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Invalid data format' });
-        }
-
-        await processedDbInstance.run('BEGIN TRANSACTION');
-
-        for (const record of cleanedData) {
-            await processedDbInstance.run(
-                `INSERT OR REPLACE INTO TurbineData 
-                (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, 
-                Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, 
-                SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, 
-                TurbineLatitude, TurbineLongitude)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    record.FunctionalLoc,
-                    record.Description,
-                    record.MaintPlant,
-                    record.PlanningPlant,
-                    record.Platform,
-                    record.WTShortName,
-                    record.TurbineModel,
-                    record.MkVersion,
-                    record.Revision,
-                    record.NominalPower,
-                    record.OriginalEqManufact,
-                    record.SBOMForTurbine,
-                    record.SCADAName,
-                    record.SCADAParkID,
-                    record.SCADACode,
-                    record.SCADAFunctionalLoc,
-                    record.TechID,
-                    record.Region,
-                    record.Technology,
-                    record.HubHeight,
-                    record.TowerHeight,
-                    record.TurbineClass,
-                    record.TurbineLatitude,
-                    record.TurbineLongitude
-                ]
-            );
-        }
-
-        await processedDbInstance.run('COMMIT');
-
-        res.status(201).json({
-            success: true,
-            message: 'Cleaned data successfully persisted'
-        });
-    } catch (error) {
-        await processedDbInstance.run('ROLLBACK');
-        console.error('Error saving cleaned data:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to save cleaned data',
-            error: error.message
-        });
-    }
-};
-
-export const uploadPredictionsData = async (req, res) => {
-    try {
-        const processed_Data = req.body;
-
-        if (!Array.isArray(processed_Data) || processed_Data.length === 0) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Invalid data format' });
-        }
-
-        await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
-
-        for (const record of processed_Data) {
-            await Predictions_DataDbInstance.run(
-                `INSERT OR REPLACE INTO TurbineData 
-                (FunctionalLoc, Description, MaintPlant, PlanningPlant, Platform, WTShortName, TurbineModel, MkVersion, 
-                Revision, NominalPower, OriginalEqManufact, SBOMForTurbine, SCADAName, SCADAParkID, SCADACode, 
-                SCADAFunctionalLoc, TechID, Region, Technology, HubHeight, TowerHeight, TurbineClass, 
-                TurbineLatitude, TurbineLongitude)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    record.FunctionalLoc,
-                    record.Description,
-                    record.MaintPlant || null, // Ensure null if missing for FK constraint
-                    record.PlanningPlant || null,
-                    record.Platform || null,
-                    record.WTShortName || null,
-                    record.TurbineModel || null,
-                    record.MkVersion || null,
-                    record.Revision || null,
-                    record.NominalPower || null, // Ensure correct numeric format
-                    record.OriginalEqManufact || null,
-                    record.SBOMForTurbine || null,
-                    record.SCADAName || null,
-                    record.SCADAParkID || null,
-                    record.SCADACode || null,
-                    record.SCADAFunctionalLoc || null,
-                    record.TechID || null,
-                    record.Region || null,
-                    record.Technology || null,
-                    record.HubHeight || null,
-                    record.TowerHeight || null,
-                    record.TurbineClass || null,
-                    record.TurbineLatitude
-                        ? parseFloat(record.TurbineLatitude)
-                        : null, // Ensure float conversion
-                    record.TurbineLongitude
-                        ? parseFloat(record.TurbineLongitude)
-                        : null // Ensure float conversion
-                ]
-            );
-        }
-
-        await Predictions_DataDbInstance.run('COMMIT');
-
-        res.status(201).json({
-            success: true,
-            message: 'Processed data successfully persisted'
-        });
-    } catch (error) {
-        await Predictions_DataDbInstance.run('ROLLBACK');
-        console.error('Error saving Processed data:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to save Processed data',
-            error: error.message
-        });
-    }
-};
-
-export const getUnprocessedData = async (req, res) => {
+export const getUnprocessedTurbineData = async (req, res) => {
     try {
         const data = await unprocessedDbInstance.all(
             'SELECT * FROM TurbineData'
         );
-        // console.log('Unprocessed data(Turbine Data):', data);
         res.status(200).json({ success: true, data });
     } catch (error) {
-        console.error('Error fetching unprocessed data:', error);
+        console.error('Error fetching unprocessed TurbineData:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch unprocessed data',
+            message: 'Failed to fetch unprocessed TurbineData',
             error: error.message
         });
     }
 };
 
-export const getProcessedData = async (req, res) => {
+export const getUnprocessedMaterialData = async (req, res) => {
     try {
-        const data = await processedDbInstance.all('SELECT * FROM TurbineData');
-        // console.log('Processed data(Turbine Data):', data);
+        const data = await unprocessedDbInstance.all(
+            'SELECT * FROM MaterialData'
+        );
         res.status(200).json({ success: true, data });
     } catch (error) {
-        console.error('Error fetching processed data:', error);
+        console.error('Error fetching unprocessed MaterialData:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to fetch processed data',
+            message: 'Failed to fetch unprocessed MaterialData',
+            error: error.message
+        });
+    }
+};
+
+export const getProcessedMaterialData = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all(
+            'SELECT * FROM MaterialData'
+        );
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching processed MaterialData:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch processed MaterialData',
+            error: error.message
+        });
+    }
+};
+
+export const getProcessedTurbineData = async (req, res) => {
+    try {
+        const data = await processedDbInstance.all('SELECT * FROM TurbineData');
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching processed TurbineData:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch processed TurbineData',
             error: error.message
         });
     }
@@ -178,9 +70,8 @@ export const getProcessedData = async (req, res) => {
 export const getPredictionsData = async (req, res) => {
     try {
         const data = await Predictions_DataDbInstance.all(
-            'SELECT * FROM MaterialData'
+            'SELECT * FROM TurbineData'
         );
-        // console.log('Prediction data(Material Data):', data);
         res.status(200).json({ success: true, data });
     } catch (error) {
         console.error('Error fetching prediction data:', error);
@@ -191,4 +82,126 @@ export const getPredictionsData = async (req, res) => {
         });
     }
 };
-``
+
+export const getTechnicians = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT Technician_ID, Name, Surname FROM Technician'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch technician data',
+            error: error.message
+        });
+    }
+};
+
+export const getLocations = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT Location_ID, Location_Name FROM Location'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch location data',
+            error: error.message
+        });
+    }
+};
+
+export const getPredictionMaterialData = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialData'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction material data',
+            error: error.message
+        });
+    }
+};
+
+export const getPredictionTurbineData = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM TurbineData'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+
+export const getMaterialPredictions = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM Material'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+export const getMaintenanceForecasts = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaintenanceForecasts'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+export const getMaterialStatusTransitions = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MaterialStatusTransitions'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+export const getMonteCarloDominance = async (req, res) => {
+    try {
+        const data = await Predictions_DataDbInstance.all(
+            'SELECT * FROM MonteCarloDominance'
+        );
+        res.status(200).json({ success: true, data: data || [] }); // Ensure data is always an array
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch prediction turbine data',
+            error: error.message
+        });
+    }
+};
+
+

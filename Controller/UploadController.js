@@ -1,13 +1,12 @@
-import {
-    unprocessedDbInstance,
-    InitializeDatabases
-} from '../Database/Database.js';
+import { unprocessedDbInstance, Predictions_DataDbInstance} from '../Database/Database.js';
 import multer from 'multer';
 import fs from 'fs';
 import Papa from 'papaparse';
 
 // Multer storage setup
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({
+    dest: 'uploads/',
+});
 
 // Define expected headers for different tables
 const tableSchemaMapping = {
@@ -28,7 +27,7 @@ const tableSchemaMapping = {
             Plant: 'Plant',
             'Plant-Specific Material Status': 'PlantSpecificMaterialStatus',
             'Batch Management(Plant)': 'BatchManagementPlant',
-            'Serial No. Profile': 'SerialNoProfile',
+            'Serial No. Profile': 'Serial_No_Profile',
             'Replacement Part': 'ReplacementPart',
             'Used in a S-bom': 'UsedInSBom'
         }
@@ -183,7 +182,27 @@ const determineTargetTable = (data) => {
     return { table: null, columnMapping: null };
 };
 
-// Function to insert extracted data into the unprocessed database
+function parseCoordinate(coord) {
+    if (!coord) return null;
+    if (typeof coord === 'number') return coord;
+
+    try {
+        const parts = String(coord).split(',');
+        if (parts.length === 4) {
+            const deg = parseFloat(parts[0]);
+            const min = parseFloat(parts[1]);
+            const sec = parseFloat(parts[2]);
+            const milli = parseFloat(parts[3]);
+            const decimal = Math.abs(deg) + min / 60 + (sec + milli / 1000) / 3600;
+            return deg < 0 ? -decimal : decimal;
+        }
+
+        return parseFloat(coord.replace(',', '.'));
+    } catch {
+        return null;
+    }
+}
+
 const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
     try {
         if (!unprocessedDbInstance) {
@@ -192,35 +211,28 @@ const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
             );
         }
 
-        // Generate query dynamically
         const dbColumns = Object.values(columnMapping);
         const placeholders = dbColumns.map(() => '?').join(', ');
         const query = `INSERT INTO ${table} (${dbColumns.join(
             ', '
         )}) VALUES (${placeholders})`;
 
-        // Insert each row dynamically
         for (const row of data) {
-            const values = Object.keys(columnMapping).map(
-                (csvHeader) => row[csvHeader] || null
-            );
+            const values = Object.keys(columnMapping).map(csvHeader => {
+                let value = row[csvHeader] || null;
 
-            try {
-                await unprocessedDbInstance.run(query, values);
-            } catch (error) {
-                if (error.message.includes('UNIQUE constraint failed')) {
-                    console.error(
-                        `Duplicate entry detected for row: ${JSON.stringify(
-                            row
-                        )}`
-                    );
-                    throw new Error(
-                        `Duplicate entry detected for Material: ${row.Material}, Plant: ${row.Plant}`
-                    );
-                } else {
-                    throw error; // Re-throw other errors
+                // ✅ Fix coordinate parsing here
+                if (
+                    columnMapping[csvHeader] === "TurbineLatitude" ||
+                    columnMapping[csvHeader] === "TurbineLongitude"
+                ) {
+                    value = parseCoordinate(value);
                 }
-            }
+
+                return value;
+            });
+
+            await unprocessedDbInstance.run(query, values);
         }
 
         console.log(`✅ Data inserted into ${table} successfully!`);
@@ -230,28 +242,63 @@ const insertDataIntoUnprocessedDB = async (data, table, columnMapping) => {
     }
 };
 
-export const getUnprocessedData = async (req, res) => {
+// Export Multer upload middleware
+export { upload };
+
+export const getUnprocessedTurbineData = async (req, res) => {
+
     try {
         const unprocessedData = await unprocessedDbInstance.all(
             `SELECT * FROM TurbineData`
         );
 
         if (!unprocessedData || unprocessedData.length === 0) {
-            return res
-                .status(404)
-                .json({ success: false, message: 'No unprocessed data found' });
+            return res.status(404).json({ success: false, message: 'No unprocessed TurbineData found' });
         }
 
         res.status(200).json({ success: true, data: unprocessedData });
     } catch (error) {
         console.error('Error fetching unprocessed data:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch unprocessed data',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed TurbineData', error: error.message });
     }
 };
 
-// Export Multer upload middleware
-export { upload };
+export const getUnprocessedMaterialData = async (req, res) => {
+    try {
+        const unprocessedData = await unprocessedDbInstance.all(`SELECT * FROM MaterialData`);
+
+        if (!unprocessedData || unprocessedData.length === 0) {
+            return res.status(404).json({ success: false, message: 'No unprocessed MaterialData found' });
+        }
+
+        res.status(200).json({ success: true, data: unprocessedData });
+    } catch (error) {
+        console.error('Error fetching unprocessed MaterialData:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch unprocessed MaterialData', error: error.message });
+    }
+};
+
+export const UploadFaultReport = async (req, res) => {
+    try {
+        const { Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status } = req.body;
+        const fileBuffer = req.file ? req.file.buffer : null;
+
+        if (!Technician_ID || !TurbineLocation || !Report_Date || !Fault_Description || !Report_Status || !fileBuffer) {
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        const query = `
+            INSERT INTO FaultReport (Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status, Updated_Time, Attachment)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+        `;
+
+        const params = [Technician_ID, TurbineLocation, Report_Date, Fault_Description, Report_Status, fileBuffer];
+
+        await Predictions_DataDbInstance.run(query, params);
+
+        res.status(201).json({ success: true, message: "Fault report submitted successfully" });
+    } catch (error) {
+        console.error("Error submitting fault report:", error);
+        res.status(500).json({ success: false, message: "Failed to submit fault report", error: error.message });
+    }
+};
