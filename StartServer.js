@@ -22,7 +22,7 @@ const startServer = async () => {
   try {
     await startDatabases();
     server.listen(PORT, () => {
-      console.log(`🚀 Server is running on Port ${PORT}`);
+      console.log(`Server is running on Port ${PORT}`);
     });
   } catch (error) {
     console.error('Error starting databases:', error.message);

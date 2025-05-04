@@ -50,7 +50,7 @@ export const getMaterialClassified = async (req, res) => {
 export const getMaterialUnclassified = async (req, res) => {
     try {
         const data = await processedDbInstance.all(
-            `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE MaterialCategory = 'Unclassified'`
+            `SELECT COUNT(*) AS total_violations FROM MaterialData WHERE MaterialCategory = 'Unclassified' OR MaterialCategory = 'Newly Discovered'` 
         );
         res.status(200).json({ success: true, data: data }); // Ensure data is always an array
     } catch (error) {

@@ -1,23 +1,15 @@
 import { spawn } from 'child_process';
 import path from 'path';
-
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export const ScriptController = async (req, res) => {
+export const ScriptControllerHumanInTheLoop = async (req, res) => {
     try {
-        // Logic for selecting which script to run
-        const scriptName = 'main'; // Predefined or determined based on your logic
-        const scriptFolderPath = path.join(
-            __dirname,
-            '..',
-            '..',
-            '..',
-            'Backend'
-        ); // Going two levels up to get outside the server folder
+        const scriptName = 'main'; // Python script name
+        const scriptFolderPath = path.join(__dirname, '..', '..', '..', 'Backend');
         const scriptPath = path.join(scriptFolderPath, `${scriptName}.py`);
 
         const pythonProcess = spawn('python', [scriptPath, 'human_in_the_loop']);
@@ -28,13 +20,12 @@ export const ScriptController = async (req, res) => {
         });
 
         pythonProcess.stderr.on('data', (error) => {
-            console.error(`Error: ${error}`);
+            console.error(`Python script stderr: ${error}`);
         });
 
         pythonProcess.on('close', (code) => {
-            console.log(`Python script exited with code ${code}`);
-            // console.log('Output:\n', output.trim());
-            res.json('Data Cleaning Complete ✅'); // Send script output back to frontend
+            console.log(`Python script (human_in_the_loop) exited with code ${code}`);
+            res.json({ output: output.trim() });
         });
     } catch (error) {
         console.error('Error running Python script:', error);

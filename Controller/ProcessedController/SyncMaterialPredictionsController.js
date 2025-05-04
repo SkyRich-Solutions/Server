@@ -210,7 +210,7 @@ export const syncMonteCarloDominanceController = async (req, res) => {
             const percentage = Number(row.Percentage ?? 0);
 
             if (!description) {
-                console.warn(`⚠️ Skipping row with missing Description:`, row);
+                console.warn(`Skipping row with missing Description:`, row);
                 continue;
             }
 

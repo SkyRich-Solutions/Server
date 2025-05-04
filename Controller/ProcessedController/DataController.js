@@ -70,7 +70,7 @@ export const getProcessedTurbineData = async (req, res) => {
 export const getPredictionsData = async (req, res) => {
     try {
         const data = await Predictions_DataDbInstance.all(
-            'SELECT * FROM TurbineData'
+            'SELECT * FROM MaterialData'
         );
         res.status(200).json({ success: true, data });
     } catch (error) {

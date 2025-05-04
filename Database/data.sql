@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS MaterialData (
     ViolationReplacementPart TEXT,
     MaterialCategory TEXT,
     UnknownPlant TEXT,
+    Auto_Classified INTEGER DEFAULT 0,
     Timestamp TEXT,
     PRIMARY KEY (Material, Plant),
     FOREIGN KEY (Plant) REFERENCES Plant(Plant_Code)
@@ -374,8 +375,6 @@ INSERT INTO Technician (Technician_ID, Name, Surname) VALUES
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;
 
-
-
 CREATE TABLE IF NOT EXISTS MaterialData (
     Material TEXT,
     Plant TEXT,
@@ -388,6 +387,7 @@ CREATE TABLE IF NOT EXISTS MaterialData (
     ViolationReplacementPart TEXT,
     MaterialCategory TEXT,
     UnknownPlant TEXT,
+    Auto_Classified INTEGER DEFAULT 0,
     PRIMARY KEY (Material, Plant)
 );
 

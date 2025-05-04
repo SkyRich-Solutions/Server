@@ -121,7 +121,6 @@ export const uploadProcessedTurbineData = async (req, res) => {
     }
 };
 
-
 export const uploadProcessedMaterialData = async (req, res) => {
     try {
         const cleanedData = req.body;
@@ -146,7 +145,8 @@ export const uploadProcessedMaterialData = async (req, res) => {
                 record.UsedInSBom,
                 record.ViolationReplacementPart,
                 record.MaterialCategory,
-                record.UnknownPlant
+                record.UnknownPlant,
+                record.Auto_Classified || 0 // <-- Default to 0 if undefined
             ];
 
             const insertValues = [
@@ -159,15 +159,16 @@ export const uploadProcessedMaterialData = async (req, res) => {
                 UPDATE MaterialData 
                 SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
                     Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
-                    MaterialCategory = ?, UnknownPlant = ?
+                    MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?
                 WHERE Material = ? AND Plant = ?
             `;
 
             const insertQueryBase = `
                 INSERT INTO MaterialData 
                 (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
-                 Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, UnknownPlant)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, 
+                 MaterialCategory, UnknownPlant, Auto_Classified)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             for (const db of [processedDbInstance, Predictions_DataDbInstance]) {
@@ -183,15 +184,15 @@ export const uploadProcessedMaterialData = async (req, res) => {
                     insertQuery = `
                         INSERT INTO MaterialData 
                         (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
-                         Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, 
-                         UnknownPlant, Timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, 
+                         MaterialCategory, UnknownPlant, Auto_Classified, Timestamp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
                     updateQuery = `
                         UPDATE MaterialData 
                         SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
                             Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
-                            MaterialCategory = ?, UnknownPlant = ?, Timestamp = ?
+                            MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?, Timestamp = ?
                         WHERE Material = ? AND Plant = ?
                     `;
                     insertVals.push(record.Timestamp);
@@ -224,7 +225,7 @@ export const uploadProcessedMaterialData = async (req, res) => {
     } catch (error) {
         await processedDbInstance.run('ROLLBACK');
         await Predictions_DataDbInstance.run('ROLLBACK');
-        console.error('❌ Error saving cleaned data:', error);
+        console.error('Error saving cleaned data:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to save cleaned data',
@@ -232,6 +233,7 @@ export const uploadProcessedMaterialData = async (req, res) => {
         });
     }
 };
+
 
 export const fetchReplacementParts = async (req, res) => {
     try {

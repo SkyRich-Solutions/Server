@@ -1,7 +1,6 @@
 import {
     Predictions_DataDbInstance
 } from '../../Database/Database.js';
-
 export const uploadMaterialPredictionsData = async (req, res) => {
     try {
         const processed_Data = req.body;
@@ -22,11 +21,12 @@ export const uploadMaterialPredictionsData = async (req, res) => {
             );
 
             if (existing) {
-                // If exists, update only necessary fields
+                // If exists, update including Auto_Classified
                 await Predictions_DataDbInstance.run(
                     `UPDATE MaterialData 
                      SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
-                         Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?,  ViolationReplacementPart = ?, MaterialCategory = ?, UnknownPlant = ?
+                         Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
+                         MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?
                      WHERE Material = ? AND Plant = ?`,
                     [
                         record.Description || null,
@@ -38,17 +38,19 @@ export const uploadMaterialPredictionsData = async (req, res) => {
                         record.ViolationReplacementPart || null,
                         record.MaterialCategory || null,
                         record.UnknownPlant || null,
+                        record.Auto_Classified ?? 0,  // Default to 0 if missing
                         record.Material,
                         record.Plant
                     ]
                 );
             } else {
-                // If not exists, insert new record
+                // If not exists, insert including Auto_Classified
                 await Predictions_DataDbInstance.run(
                     `INSERT INTO MaterialData 
                     (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
-                    Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, UnknownPlant)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, 
+                    UnknownPlant, Auto_Classified)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         record.Material,
                         record.Plant,
@@ -58,9 +60,10 @@ export const uploadMaterialPredictionsData = async (req, res) => {
                         record.Serial_No_Profile || null,
                         record.ReplacementPart || null,
                         record.UsedInSBom || null,
-                        record.MaterialCategory || null,
                         record.ViolationReplacementPart || null,
-                        record.UnknownPlant || null
+                        record.MaterialCategory || null,
+                        record.UnknownPlant || null,
+                        record.Auto_Classified ?? 0 // Default to 0
                     ]
                 );
             }
@@ -82,6 +85,7 @@ export const uploadMaterialPredictionsData = async (req, res) => {
         });
     }
 };
+
 
 export const uploadTurbinePredictionsData = async (req, res) => {
     try {
