@@ -20,7 +20,7 @@ export const ScriptController = async (req, res) => {
         ); // Going two levels up to get outside the server folder
         const scriptPath = path.join(scriptFolderPath, `${scriptName}.py`);
 
-        const pythonProcess = spawn('python3', [scriptPath]);
+        const pythonProcess = spawn('python', [scriptPath, 'human_in_the_loop']);
 
         let output = '';
         pythonProcess.stdout.on('data', (data) => {
