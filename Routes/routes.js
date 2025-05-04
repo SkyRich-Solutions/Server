@@ -82,6 +82,10 @@ import { syncTurbinePlatformHealthScores } from "../Controller/ProcessedControll
 
 import { ScriptController } from "../Controller/Script/ScriptController.js";
 
+import {ScriptControllerHumanInTheLoop} from "../Controller/Script/ScriptHumanInTheLoopController.js";
+
+import { updateMaterialCategoryDataController } from "../Controller/ProcessedController/UpdateMaterialCategoryDataController.js";
+
 import {
   WarehousePlanningPlant,
   WarehouseManufacturingPlant,
@@ -129,7 +133,7 @@ const uploadpdf = multer({ storage: storage });
 // Initialize express router
 
 router.get("/", (req, res) => {
-  res.send("🚀 API Running!");
+  res.send(" API Running!");
 });
 
 // Front end routes
@@ -137,6 +141,8 @@ router.get("/uploadPredictionData", getPredictionsData);
 router.post("/uploadFile", upload.single("file"), uploadCSV);
 router.post("/faultReport", uploadpdf.single("file"), UploadFaultReport);
 router.post("/run-python", ScriptController);
+router.post('/run-python-human-in-the-loop', ScriptControllerHumanInTheLoop);
+router.post("/updateMaterialCategories", updateMaterialCategoryDataController);
 
 // Backend routes
 router.post("/uploadProcessedTurbineData", uploadProcessedTurbineData);
@@ -269,5 +275,7 @@ router.get("/getPredictionMaterialData", getPredictionMaterialData);
 
 //Tubrine Data Dashboard
 router.get("/getPredictionTurbineData", getPredictionTurbineData);
+
+
 
 export default router;

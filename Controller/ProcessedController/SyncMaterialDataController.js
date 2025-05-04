@@ -17,7 +17,7 @@ export const syncMaterialData = async (req, res) => {
 
         for (const materialCode of materials) {
             const materialRows = await Predictions_DataDbInstance.all(
-                `SELECT Material, MaterialCategory, Description, ViolationReplacementPart, Serial_No_Profile, Plant
+                `SELECT Material, MaterialCategory, Description, ReplacementPart, ViolationReplacementPart, Serial_No_Profile, Plant
                  FROM MaterialData
                  WHERE Material = ?`,
                 [materialCode]
@@ -83,9 +83,8 @@ export const syncMaterialData = async (req, res) => {
             // ReplacementPart per unique Plant
             for (const row of materialRows) {
                 const plantName = row.Plant?.trim();
-                const violation = row.ViolationReplacementPart === '1';
-
-                if (!violation) continue;
+                const isReplacement = row.ReplacementPart === 'B' || row.ViolationReplacementPart === '1';
+                if (!isReplacement) continue;
 
                 if (!plantName) {
                     console.warn(`No Plant specified for '${row.Material}'`);
