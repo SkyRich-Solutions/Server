@@ -153,34 +153,59 @@ const readCSVFile = (filePath) => {
             Papa.parse(data, {
                 header: true,
                 skipEmptyLines: true,
-                complete: (result) => resolve(result.data),
+                transformHeader: (header) => {
+                    const cleaned = header?.trim();
+                    if (!cleaned || cleaned.toLowerCase().startsWith('null')) return null; // 🔧 filter out extra columns
+                    return cleaned;
+                },
+                complete: (result) => {
+                    const cleanedData = result.data.map(row => {
+                        const cleanedRow = {};
+                        for (const [key, value] of Object.entries(row)) {
+                            if (key?.trim()) cleanedRow[key.trim()] = value;
+                        }
+                        return cleanedRow;
+                    });
+                    resolve(cleanedData);
+                },
                 error: (error) => reject(error)
             });
         });
     });
 };
 
+
 // Function to determine the exact match table based on headers
 const determineTargetTable = (data) => {
     if (!data || data.length === 0) return { table: null, columnMapping: null };
 
-    const csvHeaders = Object.keys(data[0]);
+    const normalize = (str) =>
+        str?.toLowerCase().trim().replace(/[–—−‐‑‒‾]/g, '-') // normalize dashes
+            .replace(/\s+/g, ' '); // collapse multiple spaces
+
+    const rawHeaders = Object.keys(data[0] || {});
+    const csvHeaders = rawHeaders
+        .filter(h => h && h.trim().length > 0)
+        .map(normalize);
+
+    console.log('📥 Parsed CSV Headers:', rawHeaders);
+    console.log('🧼 Normalized CSV Headers:', csvHeaders);
 
     for (const [tableName, schema] of Object.entries(tableSchemaMapping)) {
-        const expectedHeaders = schema.headers;
+        const expectedHeaders = schema.headers.map(normalize);
 
-        // Check for exact match
-        const isExactMatch =
-            csvHeaders.length === expectedHeaders.length &&
-            csvHeaders.every((header) => expectedHeaders.includes(header));
+        const allRequiredPresent = expectedHeaders.every(h => csvHeaders.includes(h));
 
-        if (isExactMatch) {
+        if (allRequiredPresent) {
+            console.log(`✅ Matched table: ${tableName}`);
             return { table: tableName, columnMapping: schema.columnMapping };
         }
     }
 
+    console.warn('❌ No matching table found. Parsed headers:', csvHeaders);
     return { table: null, columnMapping: null };
 };
+
 
 function parseCoordinate(coord) {
     if (!coord) return null;
