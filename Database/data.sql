@@ -424,7 +424,7 @@ CREATE TABLE IF NOT EXISTS TurbineData (
 
 
 
--- Unporcessed Database ---------------------------------------------
+-- Unprocessed Database ---------------------------------------------
 
 DROP TABLE IF EXISTS MaterialData;
 DROP TABLE IF EXISTS TurbineData;

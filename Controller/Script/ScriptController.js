@@ -20,7 +20,7 @@ export const ScriptController = async (req, res) => {
         ); // Going two levels up to get outside the server folder
         const scriptPath = path.join(scriptFolderPath, `${scriptName}.py`);
 
-        const pythonProcess = spawn('python', [scriptPath, 'human_in_the_loop']);
+        const pythonProcess = spawn('python', [scriptPath, 'main']);
 
         let output = '';
         pythonProcess.stdout.on('data', (data) => {
@@ -34,7 +34,7 @@ export const ScriptController = async (req, res) => {
         pythonProcess.on('close', (code) => {
             console.log(`Python script exited with code ${code}`);
             // console.log('Output:\n', output.trim());
-            res.json('Data Cleaning Complete ✅'); // Send script output back to frontend
+            res.json('Data Cleaning Complete'); // Send script output back to frontend
         });
     } catch (error) {
         console.error('Error running Python script:', error);
