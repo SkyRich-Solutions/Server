@@ -80,9 +80,12 @@ import { syncTurbineModelHealthScores } from "../Controller/ProcessedController/
 //Upload Turbine Platform Health Score imports
 import { syncTurbinePlatformHealthScores } from "../Controller/ProcessedController/SyncTurbinePlatformHealthScores.js";
 
-import { ScriptController } from "../Controller/Script/ScriptController.js";
 
-import {ScriptControllerHumanInTheLoop} from "../Controller/Script/ScriptHumanInTheLoopController.js";
+//Processing Scripts and Triggering 
+import { ScriptController } from '../Controller/Script/ScriptController.js';
+import { ScriptControllerHumanInTheLoop } from '../Controller/Script/ScriptHumanInTheLoopController.js';
+import { ScriptControllerRunBoth } from '../Controller/Script/ScriptControllerRunBoth.js';
+
 
 import { updateMaterialCategoryDataController } from "../Controller/ProcessedController/UpdateMaterialCategoryDataController.js";
 
@@ -133,15 +136,16 @@ const uploadpdf = multer({ storage: storage });
 // Initialize express router
 
 router.get("/", (req, res) => {
-  res.send(" API Running!");
+  res.send("API Running!");
 });
 
 // Front end routes
 router.get("/uploadPredictionData", getPredictionsData);
 router.post("/uploadFile", upload.single("file"), uploadCSV);
 router.post("/faultReport", uploadpdf.single("file"), UploadFaultReport);
-router.post("/run-python", ScriptController);
+router.post('/run-python', ScriptController);
 router.post('/run-python-human-in-the-loop', ScriptControllerHumanInTheLoop);
+router.post('/run-python-both', ScriptControllerRunBoth);
 router.post("/updateMaterialCategories", updateMaterialCategoryDataController);
 
 // Backend routes

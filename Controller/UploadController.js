@@ -188,21 +188,18 @@ const determineTargetTable = (data) => {
         .filter(h => h && h.trim().length > 0)
         .map(normalize);
 
-    console.log('📥 Parsed CSV Headers:', rawHeaders);
-    console.log('🧼 Normalized CSV Headers:', csvHeaders);
-
     for (const [tableName, schema] of Object.entries(tableSchemaMapping)) {
         const expectedHeaders = schema.headers.map(normalize);
 
         const allRequiredPresent = expectedHeaders.every(h => csvHeaders.includes(h));
 
         if (allRequiredPresent) {
-            console.log(`✅ Matched table: ${tableName}`);
+            console.log(`Matched table: ${tableName}`);
             return { table: tableName, columnMapping: schema.columnMapping };
         }
     }
 
-    console.warn('❌ No matching table found. Parsed headers:', csvHeaders);
+    console.warn('No matching table found. Parsed headers:', csvHeaders);
     return { table: null, columnMapping: null };
 };
 

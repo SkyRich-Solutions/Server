@@ -120,7 +120,6 @@ export const uploadProcessedTurbineData = async (req, res) => {
         });
     }
 };
-
 export const uploadProcessedMaterialData = async (req, res) => {
     try {
         const cleanedData = req.body;
@@ -136,6 +135,10 @@ export const uploadProcessedMaterialData = async (req, res) => {
         await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
         for (const record of cleanedData) {
+            // 🛠 Normalize keys to prevent duplication
+            record.Material = (record.Material || "").trim();
+            record.Plant = ((record.Plant && record.Plant.trim()) || "DKS1").toUpperCase();
+
             const baseValues = [
                 record.Description,
                 record.PlantSpecificMaterialStatus,
@@ -233,7 +236,6 @@ export const uploadProcessedMaterialData = async (req, res) => {
         });
     }
 };
-
 
 export const fetchReplacementParts = async (req, res) => {
     try {
