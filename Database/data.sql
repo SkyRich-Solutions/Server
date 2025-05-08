@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS MaterialData (
     MaterialCategory TEXT,
     UnknownPlant TEXT,
     Auto_Classified INTEGER DEFAULT 0,
+    NewlyDiscovered INTEGER DEFAULT 0,
+    Manually_Classified INTEGER DEFAULT 0,
     Timestamp TEXT,
     PRIMARY KEY (Material, Plant),
     FOREIGN KEY (Plant) REFERENCES Plant(Plant_Code)
@@ -388,6 +390,8 @@ CREATE TABLE IF NOT EXISTS MaterialData (
     MaterialCategory TEXT,
     UnknownPlant TEXT,
     Auto_Classified INTEGER DEFAULT 0,
+    NewlyDiscovered INTEGER DEFAULT 0,
+    Manually_Classified INTEGER DEFAULT 0,
     PRIMARY KEY (Material, Plant)
 );
 
@@ -422,8 +426,6 @@ CREATE TABLE IF NOT EXISTS TurbineData (
 );
 ------------------------------------------------------------------
 
-
-
 -- Unprocessed Database ---------------------------------------------
 
 DROP TABLE IF EXISTS MaterialData;
@@ -431,8 +433,6 @@ DROP TABLE IF EXISTS TurbineData;
 
 
 -- Enable foreign key constraints
-
-
 
 CREATE TABLE IF NOT EXISTS MaterialData (
     Material TEXT,

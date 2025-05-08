@@ -120,6 +120,7 @@ export const uploadProcessedTurbineData = async (req, res) => {
         });
     }
 };
+
 export const uploadProcessedMaterialData = async (req, res) => {
     try {
         const cleanedData = req.body;
@@ -135,7 +136,7 @@ export const uploadProcessedMaterialData = async (req, res) => {
         await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
         for (const record of cleanedData) {
-            // 🛠 Normalize keys to prevent duplication
+            // 🛠 Normalize keys
             record.Material = (record.Material || "").trim();
             record.Plant = ((record.Plant && record.Plant.trim()) || "DKS1").toUpperCase();
 
@@ -149,7 +150,9 @@ export const uploadProcessedMaterialData = async (req, res) => {
                 record.ViolationReplacementPart,
                 record.MaterialCategory,
                 record.UnknownPlant,
-                record.Auto_Classified || 0 // <-- Default to 0 if undefined
+                record.Auto_Classified || 0,
+                record.NewlyDiscovered || 0,
+                record.Manually_Classified || 0
             ];
 
             const insertValues = [
@@ -162,7 +165,7 @@ export const uploadProcessedMaterialData = async (req, res) => {
                 UPDATE MaterialData 
                 SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
                     Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
-                    MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?
+                    MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?, NewlyDiscovered = ?, Manually_Classified = ?
                 WHERE Material = ? AND Plant = ?
             `;
 
@@ -170,8 +173,8 @@ export const uploadProcessedMaterialData = async (req, res) => {
                 INSERT INTO MaterialData 
                 (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
                  Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, 
-                 MaterialCategory, UnknownPlant, Auto_Classified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 MaterialCategory, UnknownPlant, Auto_Classified, NewlyDiscovered, Manually_Classified)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
             for (const db of [processedDbInstance, Predictions_DataDbInstance]) {
@@ -188,26 +191,33 @@ export const uploadProcessedMaterialData = async (req, res) => {
                         INSERT INTO MaterialData 
                         (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
                          Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, 
-                         MaterialCategory, UnknownPlant, Auto_Classified, Timestamp)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         MaterialCategory, UnknownPlant, Auto_Classified, NewlyDiscovered, Manually_Classified, Timestamp)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     `;
                     updateQuery = `
                         UPDATE MaterialData 
                         SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
                             Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
-                            MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?, Timestamp = ?
+                            MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?, NewlyDiscovered = ?, Manually_Classified = ?, Timestamp = ?
                         WHERE Material = ? AND Plant = ?
                     `;
                     insertVals.push(record.Timestamp);
                     updateVals.push(record.Timestamp);
                 }
 
-                updateVals.push(record.Material, record.Plant); // WHERE clause
+                updateVals.push(record.Material, record.Plant);
 
                 const exists = await db.get(
-                    `SELECT 1 FROM MaterialData WHERE Material = ? AND Plant = ?`,
+                    `SELECT Manually_Classified FROM MaterialData WHERE Material = ? AND Plant = ?`,
                     [record.Material, record.Plant]
                 );
+                
+                const isManual = exists?.Manually_Classified === 1;
+                
+                if (exists && isManual) {
+                    // Skip update to preserve manual classification
+                    continue;
+                }                
 
                 if (exists) {
                     await db.run(updateQuery, updateVals);
@@ -236,6 +246,7 @@ export const uploadProcessedMaterialData = async (req, res) => {
         });
     }
 };
+
 
 export const fetchReplacementParts = async (req, res) => {
     try {
