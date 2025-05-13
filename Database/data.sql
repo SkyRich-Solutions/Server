@@ -286,7 +286,9 @@ CREATE TABLE IF NOT EXISTS MaterialStatusTransitions (
     Plant TEXT,
     PlantSpecificMaterialStatus TEXT,
     TransitionCount INTEGER,
+    TransitionProbability REAL DEFAULT 0,
     Direction TEXT,
+    LastTransitionDate TEXT,
     PRIMARY KEY (Material, PrevStatus, Plant, PlantSpecificMaterialStatus)
 );
 
