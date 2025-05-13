@@ -1,6 +1,4 @@
-import {
-    Predictions_DataDbInstance
-} from '../../Database/Database.js';
+import { Predictions_DataDbInstance } from '../../Database/Database.js';
 export const uploadMaterialPredictionsData = async (req, res) => {
     try {
         const processed_Data = req.body;
@@ -14,19 +12,32 @@ export const uploadMaterialPredictionsData = async (req, res) => {
         await Predictions_DataDbInstance.run('BEGIN TRANSACTION');
 
         for (const record of processed_Data) {
-            // Check if record exists
+            const material = record.Material;
+            const plant = record.Plant;
+
+            // Normalize fallback values
+            const autoClassified = record.Auto_Classified ?? 0;
+            const newlyDiscovered = record.NewlyDiscovered ?? 0;
+            const manuallyClassified = record.Manually_Classified ?? 0;
+
             const existing = await Predictions_DataDbInstance.get(
-                `SELECT 1 FROM MaterialData WHERE Material = ? AND Plant = ?`,
+                `SELECT Manually_Classified FROM MaterialData WHERE Material = ? AND Plant = ?`,
                 [record.Material, record.Plant]
             );
+            
+            const isManual = existing?.Manually_Classified === 1;
+            
+            if (existing && isManual) {
+                // Skip update to preserve manual classification
+                continue;
+            }            
 
             if (existing) {
-                // If exists, update including Auto_Classified
                 await Predictions_DataDbInstance.run(
                     `UPDATE MaterialData 
                      SET Description = ?, PlantSpecificMaterialStatus = ?, BatchManagementPlant = ?, 
                          Serial_No_Profile = ?, ReplacementPart = ?, UsedInSBom = ?, ViolationReplacementPart = ?, 
-                         MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?
+                         MaterialCategory = ?, UnknownPlant = ?, Auto_Classified = ?, NewlyDiscovered = ?, Manually_Classified = ?
                      WHERE Material = ? AND Plant = ?`,
                     [
                         record.Description || null,
@@ -38,22 +49,23 @@ export const uploadMaterialPredictionsData = async (req, res) => {
                         record.ViolationReplacementPart || null,
                         record.MaterialCategory || null,
                         record.UnknownPlant || null,
-                        record.Auto_Classified ?? 0,  // Default to 0 if missing
-                        record.Material,
-                        record.Plant
+                        autoClassified,
+                        newlyDiscovered,
+                        manuallyClassified,
+                        material,
+                        plant
                     ]
                 );
             } else {
-                // If not exists, insert including Auto_Classified
                 await Predictions_DataDbInstance.run(
                     `INSERT INTO MaterialData 
                     (Material, Plant, Description, PlantSpecificMaterialStatus, BatchManagementPlant, 
-                    Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, 
-                    UnknownPlant, Auto_Classified)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                     Serial_No_Profile, ReplacementPart, UsedInSBom, ViolationReplacementPart, MaterialCategory, 
+                     UnknownPlant, Auto_Classified, NewlyDiscovered, Manually_Classified)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
-                        record.Material,
-                        record.Plant,
+                        material,
+                        plant,
                         record.Description || null,
                         record.PlantSpecificMaterialStatus || null,
                         record.BatchManagementPlant || null,
@@ -63,7 +75,9 @@ export const uploadMaterialPredictionsData = async (req, res) => {
                         record.ViolationReplacementPart || null,
                         record.MaterialCategory || null,
                         record.UnknownPlant || null,
-                        record.Auto_Classified ?? 0 // Default to 0
+                        autoClassified,
+                        newlyDiscovered,
+                        manuallyClassified
                     ]
                 );
             }

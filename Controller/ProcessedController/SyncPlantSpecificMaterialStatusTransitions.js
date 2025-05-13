@@ -50,14 +50,17 @@ export const syncPlantSpecificMaterialStatusTransitions = async (req, res) => {
                     PrevStatus: e.status,
                     PlantSpecificMaterialStatus: e.status,
                     TransitionCount: 0,
-                    Direction: "none"
+                    Direction: "none",
+                    LastTransitionDate: e.timestamp
                 });
                 continue;
             }
 
             let prev = null;
+            let prevTs = null;
             for (const entry of entries) {
                 const curr = entry.status;
+                const currTs = entry.timestamp;
                 if (prev && VALID_STATUSES.includes(prev) && VALID_STATUSES.includes(curr)) {
                     const fromIdx = VALID_STATUSES.indexOf(prev);
                     const toIdx = VALID_STATUSES.indexOf(curr);
@@ -75,10 +78,12 @@ export const syncPlantSpecificMaterialStatusTransitions = async (req, res) => {
                         PrevStatus: prev,
                         PlantSpecificMaterialStatus: curr,
                         TransitionCount: stepCount,
-                        Direction: direction
+                        Direction: direction,
+                        LastTransitionDate: currTs
                     });
                 }
                 prev = entry.status;
+                prevTs = entry.timestamp;
             }
         }
 
@@ -93,15 +98,19 @@ export const syncPlantSpecificMaterialStatusTransitions = async (req, res) => {
                 Plant: row.Plant,
                 PlantSpecificMaterialStatus: row.PlantSpecificMaterialStatus,
                 TransitionCount: 0,
-                Direction: row.Direction
+                Direction: row.Direction,
+                LastTransitionDate: row.LastTransitionDate
             };
+
             grouped[key].TransitionCount += row.TransitionCount;
+
+            // Always keep the latest transition timestamp
+            if (new Date(row.LastTransitionDate) > new Date(grouped[key].LastTransitionDate)) {
+                grouped[key].LastTransitionDate = row.LastTransitionDate;
+            }
         }
 
         const allGrouped = Object.values(grouped);
-        if (allGrouped.length > 0) {
-        }
-
         if (allGrouped.length === 0) {
             return res.status(200).json({ success: true, message: "No transitions to sync." });
         }
@@ -117,11 +126,13 @@ export const syncPlantSpecificMaterialStatusTransitions = async (req, res) => {
             for (const row of allGrouped) {
                 await Predictions_DataDbInstance.run(`
                     INSERT INTO MaterialStatusTransitions (
-                        Material, Description, PrevStatus, Plant, PlantSpecificMaterialStatus, TransitionCount, Direction
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        Material, Description, PrevStatus, Plant, PlantSpecificMaterialStatus,
+                        TransitionCount, Direction, LastTransitionDate
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(Material, PrevStatus, Plant, PlantSpecificMaterialStatus) DO UPDATE SET
                         TransitionCount = excluded.TransitionCount,
-                        Direction = excluded.Direction
+                        Direction = excluded.Direction,
+                        LastTransitionDate = excluded.LastTransitionDate
                 `, [
                     row.Material,
                     row.Description,
@@ -129,7 +140,8 @@ export const syncPlantSpecificMaterialStatusTransitions = async (req, res) => {
                     row.Plant,
                     row.PlantSpecificMaterialStatus,
                     row.TransitionCount,
-                    row.Direction
+                    row.Direction,
+                    row.LastTransitionDate
                 ]);
                 inserted++;
             }
