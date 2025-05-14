@@ -5,7 +5,7 @@ import {
   getUnprocessedMaterialData,
   getUnprocessedTurbineData,
   UploadFaultReport,
-} from "../Controller/UploadController.js";
+} from "../Controller/UploadDataController/UploadController.js";
 import {
   getPredictionsData,
   getProcessedMaterialData,
@@ -18,30 +18,19 @@ import {
   getMaterialStatusTransitions,
   getMonteCarloDominance,
   getMaterialPredictions,
-} from "../Controller/ProcessedController/DataController.js";
+} from "../Controller/MaterialDataController/DataController.js";
 // Fault Report imports
-import {
-  syncFaultReportsController,
-  verifyTechnicianLinksController,
-} from "../Controller/ProcessedController/SyncFaultReportsController.js";
+import {syncFaultReportsController, verifyTechnicianLinksController} from "../Controller/FaultReportDataController/SyncFaultReportsController.js";
 
 //  Material imports
-import { syncMaterialData } from "../Controller/ProcessedController/SyncMaterialDataController.js";
-import {
-  syncReplacementPredictionsController,
-  syncMonteCarloDominanceController,
-  syncReplacementTrendsController,
-} from "../Controller/ProcessedController/SyncMaterialPredictionsController.js";
+import { syncMaterialData } from "../Controller/MaterialDataController/SyncMaterialDataController.js";
+import {syncReplacementPredictionsController, syncMonteCarloDominanceController, syncReplacementTrendsController} from "../Controller/MaterialDataController/SyncMaterialPredictionsController.js";
 
 //  Turbine imports
-import { syncTurbineData } from "../Controller/ProcessedController/SyncTurbineDataController.js";
+import { syncTurbineData } from "../Controller/TurbineDataController/SyncTurbineDataController.js";
 
 //  Plant imports
-
-import {
-  syncPlantCoordinates,
-  syncPlantData,
-} from "../Controller/ProcessedController/SyncPlantDataController.js";
+import { syncPlantCoordinates, syncPlantData,} from "../Controller/PlantDataController/SyncPlantDataController.js";
 
 // Upload Processed Data imports
 import {
@@ -50,51 +39,47 @@ import {
   fetchReplacementParts,
   fetchPlantTable,
   fetchMaterialTable,
-} from "../Controller/ProcessedController/UploadProcessedDataController.js";
+} from "../Controller/ProcessedDataController/UploadProcessedDataController.js";
 
 // Upload Predictions Data imports
-import {
-  uploadTurbinePredictionsData,
-  uploadMaterialPredictionsData,
-  fetchReplacementPrediction,
-} from "../Controller/ProcessedController/UploadPredictionsDataController.js";
+import {uploadTurbinePredictionsData, uploadMaterialPredictionsData, fetchReplacementPrediction} from "../Controller/ProcessedDataController/UploadPredictionsDataController.js";
 
-// Upload Catecory Predictions Data imports
-import { syncMaterialCategoryPredictionsController } from "../Controller/ProcessedController/SyncMaterialCategoryPredictions.js";
+// Upload Category Predictions Data imports
+import { syncMaterialCategoryPredictionsController } from "../Controller/MaterialDataController/SyncMaterialCategoryPredictions.js";
 
 // Upload Plant Specific Material Status Transitions imports
-import { syncPlantSpecificMaterialStatusTransitions } from "../Controller/ProcessedController/SyncPlantSpecificMaterialStatusTransitions.js";
+import { syncPlantSpecificMaterialStatusTransitions } from "../Controller/MaterialDataController/SyncPlantSpecificMaterialStatusTransitions.js";
 
 //Upload Material Category Health Score imports
-import { syncMaterialCategoryHealthScores } from "../Controller/ProcessedController/SyncMaterialCategoryHealthScores.js";
+import { syncMaterialCategoryHealthScores } from "../Controller/MaterialDataController/SyncMaterialCategoryHealthScores.js";
 
 //Uplodad Material Maintenance Forecasts imports
-import { syncMaterialMaintenanceForecasts } from "../Controller/ProcessedController/SyncMaterialMaintenanceForecasts.js";
+import { syncMaterialMaintenanceForecasts } from "../Controller/MaterialDataController/SyncMaterialMaintenanceForecasts.js";
 
 // Upload Material Component Health Score imports
-import { syncMaterialComponentHealthScores } from "../Controller/ProcessedController/SyncMaterialComponentHealthScores.js";
+import { syncMaterialComponentHealthScores } from "../Controller/MaterialDataController/SyncMaterialComponentHealthScores.js";
 
 //Upload Turbine Model Health Score imports
-import { syncTurbineModelHealthScores } from "../Controller/ProcessedController/SyncTurbineModelHealthScores.js";
+import { syncTurbineModelHealthScores } from "../Controller/TurbineDataController/SyncTurbineModelHealthScores.js";
 
 //Upload Turbine Platform Health Score imports
-import { syncTurbinePlatformHealthScores } from "../Controller/ProcessedController/SyncTurbinePlatformHealthScores.js";
+import { syncTurbinePlatformHealthScores } from "../Controller/TurbineDataController/SyncTurbinePlatformHealthScores.js";
 
 
 //Processing Scripts and Triggering 
-import { ScriptController } from '../Controller/Script/ScriptController.js';
-import { ScriptControllerHumanInTheLoop } from '../Controller/Script/ScriptHumanInTheLoopController.js';
-import { ScriptControllerRunBoth } from '../Controller/Script/ScriptControllerRunBoth.js';
+import { ScriptController } from '../Controller/ScriptController/ScriptController.js';
+import { ScriptControllerHumanInTheLoop } from '../Controller/ScriptController/ScriptHumanInTheLoopController.js';
+import { ScriptControllerRunBoth } from '../Controller/ScriptController/ScriptControllerRunBoth.js';
 
 
-import { updateMaterialCategoryDataController } from "../Controller/ProcessedController/UpdateMaterialCategoryDataController.js";
+import { updateMaterialCategoryDataController } from "../Controller/MaterialDataController/UpdateMaterialCategoryDataController.js";
 
 import {
   WarehousePlanningPlant,
   WarehouseManufacturingPlant,
   WarehousePlant,
   getAllTurbine,
-} from "../Controller/ProcessedController/MapsController.js";
+} from "../Controller/MapDataController/MapsController.js";
 
 import {
   getMaterialReplacementPartsViolations,
@@ -109,27 +94,27 @@ import {
   getTurbineUnknownPlanningPlantViolation,
   getTurbineUnknownLocation,
   getTurbineKnownLocation,
-} from "../Controller/ProcessedController/ViolationController.js";
+} from "../Controller/ViolationDataController/ViolationController.js";
 
 const router = express.Router();
 
 import multer from "multer";
-import { getAllFaultReports } from "../Controller/ProcessedController/FaultReportController.js";
-import { getMaterialReplacementParts } from "../Controller/ProcessedController/ReplacementPartsController.js";
+import { getAllFaultReports } from "../Controller/FaultReportDataController/FaultReportController.js";
+import { getMaterialReplacementParts } from "../Controller/MaterialDataController/ReplacementPartsController.js";
 import {
   getReplacementPrediction,
   getReplacementPredictionGlobal,
-} from "../Controller/ProcessedController/ReplacementPartsController.js";
-import { getMaterialReplacementPartsTrends } from "../Controller/ProcessedController/ReplacementPartsController.js";
-import { getMaterialCategoryHealthScores } from "../Controller/ProcessedController/MaterialCategoryController.js";
-import { getMaterialCategoryPredictions } from "../Controller/ProcessedController/MaterialCategoryController.js";
-import { getMaterialComponentHealthScore } from "../Controller/ProcessedController/MaterialComponentController.js";
-import { getMaterialComponentScoreSummary } from "../Controller/ProcessedController/MaterialComponentController.js";
-import { getMaterialCategoryScoreSummary } from "../Controller/ProcessedController/MaterialCategoryController.js";
-import { getTurbineModelHealthScore } from "../Controller/ProcessedController/TurbineModelController.js";
-import { getTurbineModelScoreSummary } from "../Controller/ProcessedController/TurbineModelController.js";
-import { getTurbinePlatformHealthScore } from "../Controller/ProcessedController/TurbinePlatformController.js";
-import { getTurbinePlatformScoreSummary } from "../Controller/ProcessedController/TurbinePlatformController.js";
+} from "../Controller/MaterialDataController/ReplacementPartsController.js";
+import { getMaterialReplacementPartsTrends } from "../Controller/MaterialDataController/ReplacementPartsController.js";
+import { getMaterialCategoryHealthScores } from "../Controller/MaterialDataController/MaterialCategoryController.js";
+import { getMaterialCategoryPredictions } from "../Controller/MaterialDataController/MaterialCategoryController.js";
+import { getMaterialComponentHealthScore } from "../Controller/MaterialDataController/MaterialComponentController.js";
+import { getMaterialComponentScoreSummary } from "../Controller/MaterialDataController/MaterialComponentController.js";
+import { getMaterialCategoryScoreSummary } from "../Controller/MaterialDataController/MaterialCategoryController.js";
+import { getTurbineModelHealthScore } from "../Controller/TurbineDataController/TurbineModelController.js";
+import { getTurbineModelScoreSummary } from "../Controller/TurbineDataController/TurbineModelController.js";
+import { getTurbinePlatformHealthScore } from "../Controller/TurbineDataController/TurbinePlatformController.js";
+import { getTurbinePlatformScoreSummary } from "../Controller/TurbineDataController/TurbinePlatformController.js";
 
 const storage = multer.memoryStorage(); // Store as buffer in memory
 const uploadpdf = multer({ storage: storage });
